@@ -9,9 +9,15 @@ import javafx.scene.layout.VBox;
 
 import javax.swing.border.EmptyBorder;
 
-public class Panel extends VBox {
-    public Panel() {
+public class ServerTab extends VBox {
+    public ServerTab() {
         final ServerConsole serverConsole = new ServerConsole();
+
+
+
+
+
+
         Label label = new Label("Label");
         final TextArea textArea = new TextArea();
         textArea.setEditable(false);
