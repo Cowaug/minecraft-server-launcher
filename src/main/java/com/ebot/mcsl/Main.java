@@ -1,24 +1,20 @@
 package com.ebot.mcsl;
 
-import com.jfoenix.controls.JFXButton;
+import com.ebot.mcsl.GUI.LaunchUI;
 import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.ToolBar;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
+
+import java.io.File;
 
 public class Main extends Application {
-    public static final String defaultPath = System.getenv("APPDATA") + "\\.minecraft";
+    public static final String path = System.getenv("APPDATA") + "\\.minecraft";
+    public static final String defaultPath = path + "\\minecraft server launcher";
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = new LaunchUI();
+        Parent root = new LaunchUI(primaryStage);
 
         primaryStage.setTitle("Minecraft Server Launcher");
         primaryStage.setScene(new Scene(root, 1280, 720));
@@ -27,7 +23,16 @@ public class Main extends Application {
         primaryStage.show();
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void main(String[] args) {
+        try {
+            File file = new File(defaultPath);
+            file.mkdir();
+            UserConfig.readUserConfig();
+            ServerManager.scanServer(UserConfig.getUserPath());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         launch(args);
     }
 }
