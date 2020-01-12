@@ -9,7 +9,6 @@ import javafx.scene.control.TextArea;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 
 public class MinecraftServer {
@@ -86,29 +85,87 @@ public class MinecraftServer {
 
     public void loadConfig() {
         try (InputStream input = new FileInputStream(serverLocation + "\\" + "server.properties")) {
-            List<String> gameMode = Arrays.asList("creative", "survival", "spectator", "adventure");
-            List<String> bool = Arrays.asList("true", "false");
-            List<String> difficulty = Arrays.asList("peaceful", "easy", "normal", "hard");
-            List<String> levelType = Arrays.asList("default", "flat", "largebiomes", "amplified","buffet");
+            CheckValue boolCheck = c -> Arrays.asList("true", "false").contains(c);
+            CheckValue gameModeCheck = c -> Arrays.asList("creative", "survival", "spectator", "adventure").contains(c);
+            CheckValue difficultyCheck = c -> Arrays.asList("peaceful", "easy", "normal", "hard").contains(c);
+            CheckValue levelTypeCheck = c -> Arrays.asList("default", "flat", "largebiomes", "amplified", "buffet").contains(c);
 
             Properties prop = new Properties();
             prop.load(input);
             prop.forEach((k, v) -> {
-                if (gameMode.contains(v.toString())) {
-                    configs.add(new Config(k.toString(), v.toString(), gameMode.toArray(new String[]{})));
-                } else if (bool.contains(v.toString())) {
-                    configs.add(new Config(k.toString(), v.toString(), bool.toArray(new String[]{})));
-                } else if (difficulty.contains(v.toString())) {
-                    configs.add(new Config(k.toString(), v.toString(), difficulty.toArray(new String[]{})));
-                } else if (levelType.contains(v.toString())) {
-                    configs.add(new Config(k.toString(), v.toString(), levelType.toArray(new String[]{})));
-                } else try {
-                    Integer.parseInt(v.toString());
-                    configs.add(new Config(k.toString(), v.toString(), new String[]{"-1"}));
-                } catch (Exception e) {
-//                    e.printStackTrace();
-                    configs.add(new Config(k.toString(), v.toString()));
+                Config config;
+                CheckValue checkValueFunction;
+                switch (k.toString()) {
+                    case "allow-flight":
+                    case "allow-nether":
+                    case "enable-command-block":
+                    case "enable-query":
+                    case "enable-rcon":
+                    case "force-gamemode":
+                    case "generate-structures":
+                    case "hardcore":
+                    case "online-mode":
+                    case "prevent-proxy-connections":
+                    case "pvp":
+                    case "snooper-enabled":
+                    case "spawn-animals":
+                    case "spawn-monsters":
+                    case "spawn-npcs":
+                    case "use-native-transport":
+                    case "white-list":
+                    case "enforce-whitelist":
+                        checkValueFunction = boolCheck;
+                        break;
+
+                    case "function-permission-level":
+                    case "op-permission-level":
+                        checkValueFunction = c -> Integer.parseInt(c) <= 4 && Integer.parseInt(c) >= 1;
+                        break;
+
+
+                    case "network-compression-threshold":
+                        checkValueFunction = c -> Integer.parseInt(c) <= -1;
+                        break;
+
+                    case "max-build-height":
+                        checkValueFunction = c -> Integer.parseInt(c) > 0;
+                        break;
+
+                    case "spawn-protection":
+                    case "player-idle-timeout":
+
+                    case "max-players":
+                        checkValueFunction = c -> Integer.parseInt(c) >= 0;
+                        break;
+
+                    case "max-tick-time":
+                        checkValueFunction = c -> Long.parseLong(c) > 0;
+                        break;
+
+                    case "max-world-size":
+                        checkValueFunction = c -> Integer.parseInt(c) <= 29999984 && Integer.parseInt(c) >= 1;
+                        break;
+                    case "rcon.port":
+                    case "query.port":
+                    case "server-port":
+                        checkValueFunction = c -> Short.parseShort(c) > 0;
+                        break;
+                    case "view-distance":
+                        checkValueFunction = c -> Short.parseShort(c) >= 3 && Short.parseShort(c) <= 32;
+                        break;
+                    case "gamemode":
+                        checkValueFunction = gameModeCheck;
+                        break;
+                    case "level-type":
+                        checkValueFunction = levelTypeCheck;
+                        break;
+                    case "difficulty":
+                        checkValueFunction = difficultyCheck;
+                        break;
+                    default:
+                        checkValueFunction = c -> true;
                 }
+                configs.add(new Config(k.toString(), v.toString(), checkValueFunction));
             });
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -135,11 +192,12 @@ public class MinecraftServer {
         private StringProperty attribute;
         private StringProperty value;
         private String[] validAttr;
+        private CheckValue checkValueFunction;
 
-        public Config(String attribute, String value, String[] validAttr) {
+        public Config(String attribute, String value, CheckValue checkValueFunction) {
             this.attribute = new SimpleStringProperty(attribute);
             this.value = new SimpleStringProperty(value);
-            this.validAttr = validAttr;
+            this.checkValueFunction = checkValueFunction;
         }
 
         public Config(String attribute, String value) {
@@ -165,18 +223,15 @@ public class MinecraftServer {
         }
 
         public void setValue(String value) throws Exception {
-            List<String> list = Arrays.asList(validAttr);
-            if (list.contains("-1")) {
-                Integer.parseInt(value);
+            if (checkValueFunction.check(value))
                 this.value.set(value);
-            } else if (!list.contains(value) && list.size() > 1) {
-                StringBuilder string = new StringBuilder();
-                for (String s : list) {
-                    string.append(s).append(" ");
-                }
-                throw new Exception("Expect: " + string);
-            } else
-                this.value.set(value);
+            else throw new Exception();
         }
+
+
+    }
+
+    interface CheckValue {
+        boolean check(String s);
     }
 }

@@ -184,20 +184,21 @@ public class GUI extends JFXTabPane {
                 try {
                     t.getTreeTableView().getTreeItem(t.getTreeTablePosition().getRow()).getValue().setValue(t.getNewValue());
                     return;
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                    s = "Expect numbers.";
+//                } catch (NumberFormatException e) {
+//                    e.printStackTrace();
+//                    s = "Expect numbers.";
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    s = e.getMessage();
+//                    e.printStackTrace();
+//                    s = e.getMessage();
+                    configTable.refresh();
                 }
-                final Stage dialog = new Stage();
-                dialog.initModality(Modality.APPLICATION_MODAL);
-                dialog.initOwner(stage);
-                Scene dialogScene = new Scene(new Label(s),480,320);
-                dialog.setScene(dialogScene);
-                dialog.show();
-                configTable.refresh();
+//                final Stage dialog = new Stage();
+//                dialog.initModality(Modality.APPLICATION_MODAL);
+//                dialog.initOwner(stage);
+//                Scene dialogScene = new Scene(new Label(s),480,320);
+//                dialog.setScene(dialogScene);
+//                dialog.show();
+//                configTable.refresh();
             });
             valueCol.prefWidthProperty().bind(configTable.widthProperty().divide(2));
             valueCol.setEditable(true);
