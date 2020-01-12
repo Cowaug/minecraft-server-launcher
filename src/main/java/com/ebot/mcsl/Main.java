@@ -1,6 +1,5 @@
 package com.ebot.mcsl;
 
-import com.ebot.mcsl.GUI.LaunchUI;
 import javafx.application.Application;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -13,8 +12,8 @@ public class Main extends Application {
     public static final String defaultPath = path + "\\minecraft server launcher";
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
-        Parent root = new LaunchUI(primaryStage);
+    public void start(Stage primaryStage) {
+        Parent root = new GUI(primaryStage);
 
         primaryStage.setTitle("Minecraft Server Launcher");
         primaryStage.setScene(new Scene(root, 1280, 720));

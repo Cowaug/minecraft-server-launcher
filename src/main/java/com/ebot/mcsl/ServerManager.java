@@ -9,11 +9,11 @@ public class ServerManager {
     private static ArrayList<MinecraftServer> minecraftServers = new ArrayList<>();
 
     public static void scanServer(String path) {
-        minecraftServers.clear();
-        File[] file = new File(path).listFiles(File::isDirectory);
-        Arrays.asList(file).forEach(e ->
-                minecraftServers.add(new MinecraftServer(e.getName(), e.getAbsolutePath()))
-        );
+//        minecraftServers.clear();
+//        File[] file = new File(path).listFiles(File::isDirectory);
+//        Arrays.asList(file).forEach(e ->
+//                minecraftServers.add(new MinecraftServer(e.getName(), e.getAbsolutePath()))
+//        );
         minecraftServers.addAll(UserConfig.readServerLocation());
     }
 
