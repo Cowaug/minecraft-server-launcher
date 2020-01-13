@@ -3,6 +3,7 @@ package com.ebot.mcsl;
 import com.jfoenix.controls.*;
 import com.sun.deploy.uitoolkit.impl.fx.HostServicesFactory;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -11,11 +12,13 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTreeTableCell;
+import javafx.scene.effect.BoxBlur;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -23,15 +26,26 @@ import java.util.Arrays;
 public class GUI extends JFXTabPane {
     private Stage stage;
     private Application application;
-    private final String boxStyle = "-fx-border-color: #00000020;\n" +
+    public static final String boxStyle = "-fx-border-color: #00000020;\n" +
+
             "-fx-border-insets: 0;\n" +
             "-fx-border-width: 2;\n";
-    private final String buttonStyle =
+    public static final String dialogStyle = "-fx-border-color: #00BCD4;\n" +
+            "-fx-border-corner: 8 8 8 8;\n" +
+            "-fx-border-width: 2;\n";
+    public static final String buttonStyle =
             "    -fx-background-color: rgb(77,102,204);\n" +
+                    "-fx-focus-color: transparent;\n" +
+                    "-fx-faint-focus-color: transparent;\n" +
+                    "    -fx-text-fill: WHITE;";
+    public static final String buttonRedStyle =
+            "    -fx-background-color: #C75450;\n" +
+                    "-fx-focus-color: transparent;\n" +
+                    "-fx-faint-focus-color: transparent;\n" +
                     "    -fx-text-fill: WHITE;";
 
-    private final Insets boxPadding = new Insets(8);
-    private final Insets labelPadding = new Insets(4, 0, 0, 0);
+    public static final Insets boxPadding = new Insets(8);
+    public static final Insets labelPadding = new Insets(4, 0, 0, 0);
 
     public GUI(Stage stage, Application application) {
         this.stage = stage;
@@ -39,9 +53,17 @@ public class GUI extends JFXTabPane {
         Tab mainTab = new Tab("Home");
 
         mainTab.setContent(new MainTab());
+
         this.getTabs().add(mainTab);
     }
 
+    public void reload() {
+        Tab mainTab = new Tab("Home");
+
+        mainTab.setContent(new MainTab());
+        this.getTabs().clear();
+        this.getTabs().add(mainTab);
+    }
 
     class ServerTab extends VBox {
         ServerTab(MinecraftServer minecraftServer, Tab tab) {
@@ -80,22 +102,24 @@ public class GUI extends JFXTabPane {
             HBox labelBox = new HBox(8);
             Label warningLabel = new Label("");
             Hyperlink helpLabel = new Hyperlink("What are these values mean?");
-            JFXButton closeBtn = new JFXButton("Exit Server Launcher");
 
             //region Top box
             selectServerLabel.setPadding(labelPadding);
             serverList.getItems().addAll(ServerManager.getServerList());
             serverList.setOnAction(event -> {
-                currentServer = ServerManager.getMinecraftServer(serverList.getSelectionModel().getSelectedItem());
+                try {
+                    currentServer = ServerManager.getMinecraftServer(serverList.getSelectionModel().getSelectedItem());
+                } catch (Exception e) {
+                    e.getMessage();
+                }
                 serverPath.setText(currentServer.getServerLocation());
                 openServerLocationBtn.setDisable(false);
-                startServerBtn.setDisable(false);
-                renameServerBtn.setDisable(false);
-                deleteButtonBtn.setDisable(false);
+                bottomBox.setDisable(false);
                 configTable.setRoot(loadConfig(currentServer));
                 jarFileSelect.getItems().clear();
                 jarFileSelect.getItems().addAll(currentServer.getJarFileList());
                 jarFileSelect.getSelectionModel().select(currentServer.getServerFileName());
+                serverRamList.getSelectionModel().select(currentServer.getMaxRam()+" MB ("+(float)(currentServer.getMaxRam()/1024.0)+" GB)");
                 if (currentServer.isLaunched()) {
                     warningLabel.setText("Server is opened. Change will not affected unless you reboot the server");
                 } else {
@@ -127,6 +151,7 @@ public class GUI extends JFXTabPane {
             //endregion
 
             //region Bottom Box
+            bottomBox.setDisable(true);
             jarFileLabel.setPadding(labelPadding);
             ramLabel.setPadding(labelPadding);
             for (float i = 0; i <= 16; i = i + 0.25f) {
@@ -136,9 +161,6 @@ public class GUI extends JFXTabPane {
             serverRamList.setOnAction(event -> {
                 currentServer.setMaxRam(Integer.parseInt(serverRamList.getSelectionModel().getSelectedItem().split(" ")[0]));
             });
-            startServerBtn.setDisable(true);
-            renameServerBtn.setDisable(true);
-            deleteButtonBtn.setDisable(true);
             startServerBtn.setStyle(buttonStyle);
             startServerBtn.setOnAction(event -> {
                 if (currentServer.isLaunched()) {
@@ -157,16 +179,28 @@ public class GUI extends JFXTabPane {
             renameServerBtn.setOnAction(event -> {
                 final Stage dialog = new Stage();
                 dialog.initModality(Modality.APPLICATION_MODAL);
+                dialog.initStyle(StageStyle.UNDECORATED);
                 dialog.initOwner(stage);
+                GUI.this.setEffect(new BoxBlur(4, 4, 4));
+
                 Scene dialogScene;
 
                 VBox mainBox = new VBox(8);
                 JFXTextField nameField = new JFXTextField(currentServer.getServerName());
                 JFXCheckBox applyToFolder = new JFXCheckBox("Rename folder to match server name");
                 JFXButton confirmBtn = new JFXButton("Rename");
+                JFXButton cancelButton = new JFXButton("Cancel");
+                applyToFolder.setOnAction(e->{
+                    if(applyToFolder.isSelected())
+                        confirmBtn.setDisable(false);
+                });
+                cancelButton.setOnAction(e -> {
+                    dialog.close();
+                    GUI.this.setEffect(new BoxBlur(0, 0, 0));
 
+                });
                 nameField.setOnKeyReleased(e -> {
-                    if (ServerManager.isDuplicate(nameField.getText()) || nameField.getText().equals("") ) {
+                    if (ServerManager.isDuplicate(nameField.getText()) || nameField.getText().equals("")) {
                         confirmBtn.setDisable(true);
                     } else {
                         confirmBtn.setDisable(false);
@@ -185,19 +219,68 @@ public class GUI extends JFXTabPane {
                     serverList.getSelectionModel().select(nameField.getText());
                     serverPath.setText(currentServer.getServerLocation());
                     dialog.close();
+                    GUI.this.setEffect(new BoxBlur(0, 0, 0));
                 });
                 confirmBtn.setMaxWidth(Double.MAX_VALUE);
+                cancelButton.setMaxWidth(Double.MAX_VALUE);
                 confirmBtn.setStyle(buttonStyle);
+                cancelButton.setStyle(buttonStyle);
                 mainBox.setPadding(boxPadding);
-                mainBox.getChildren().addAll(nameField, applyToFolder, confirmBtn);
-
+                mainBox.getChildren().addAll(nameField, applyToFolder, confirmBtn, cancelButton);
+                mainBox.setStyle(dialogStyle);
                 dialogScene = new Scene(new Group(mainBox));
                 dialog.setScene(dialogScene);
                 dialog.show();
             });
-            deleteButtonBtn.setStyle(buttonStyle);
+            deleteButtonBtn.setStyle(buttonRedStyle);
             deleteButtonBtn.setOnAction(event -> {
+                final Stage dialog = new Stage();
+                dialog.initModality(Modality.APPLICATION_MODAL);
+                dialog.initStyle(StageStyle.UNDECORATED);
+                dialog.initOwner(stage);
+                GUI.this.setEffect(new BoxBlur(4, 4, 4));
+                Scene dialogScene;
 
+                VBox mainBox = new VBox(8);
+                Label deleteLabel = new Label("You will have to manually remove file from disk");
+                JFXButton deleteServerBtn = new JFXButton("Delete server");
+                JFXButton deleteServerOpenRootBtn = new JFXButton("Delete server and open folder");
+                JFXButton cancelButton = new JFXButton("Cancel");
+                cancelButton.setOnAction(e -> {
+                    dialog.close();
+                    GUI.this.setEffect(new BoxBlur(0, 0, 0));
+
+                });
+
+                deleteServerBtn.setOnAction(e -> {
+                    ServerManager.removeMinecraftServer(currentServer);
+                    reload();
+                    dialog.close();
+                    GUI.this.setEffect(new BoxBlur(0, 0, 0));
+
+                });
+
+                deleteServerOpenRootBtn.setOnAction(e -> {
+                    openServerLocationBtn.fire();
+                    ServerManager.removeMinecraftServer(currentServer);
+                    reload();
+                    dialog.close();
+                    GUI.this.setEffect(new BoxBlur(0, 0, 0));
+
+                });
+
+                deleteServerBtn.setMaxWidth(Double.MAX_VALUE);
+                deleteServerOpenRootBtn.setMaxWidth(Double.MAX_VALUE);
+                cancelButton.setMaxWidth(Double.MAX_VALUE);
+                deleteServerBtn.setStyle(buttonRedStyle);
+                deleteServerOpenRootBtn.setStyle(buttonRedStyle);
+                cancelButton.setStyle(buttonStyle);
+                mainBox.setPadding(boxPadding);
+                mainBox.getChildren().addAll(deleteLabel, deleteServerBtn, deleteServerOpenRootBtn, cancelButton);
+                mainBox.setStyle(dialogStyle);
+                dialogScene = new Scene(new Group(mainBox));
+                dialog.setScene(dialogScene);
+                dialog.show();
             });
 
             JFXTreeTableColumn<MinecraftServer.Config, String> attrCol = new JFXTreeTableColumn<>("Attribute");
@@ -218,7 +301,7 @@ public class GUI extends JFXTabPane {
             valueCol.setOnEditCommit((TreeTableColumn.CellEditEvent<MinecraftServer.Config, String> t) -> {
                 try {
                     t.getTreeTableView().getTreeItem(t.getTreeTablePosition().getRow()).getValue().setValue(t.getNewValue());
-                    new Thread(() -> currentServer.saveConfig()).start();
+                    new Thread(() -> currentServer.saveServerConfig()).start();
                 } catch (Exception e) {
                     configTable.refresh();
                 }
@@ -250,7 +333,7 @@ public class GUI extends JFXTabPane {
             configTable.sort();
             configTable.setMaxHeight(Double.MAX_VALUE);
 
-            jarFileSelect.setMaxWidth(Double.MAX_VALUE);
+            jarFileSelect.prefWidthProperty().bind(serverProperties.widthProperty().divide(3));
             jarFileSelect.setOnAction(event -> {
                 try {
                     if (!jarFileSelect.getSelectionModel().getSelectedItem().equals(""))
@@ -261,7 +344,7 @@ public class GUI extends JFXTabPane {
 
             });
             serverProperties.getChildren().addAll(setHGrow(jarFileLabel, jarFileSelect, ramLabel, serverRamList, startServerBtn, renameServerBtn, deleteButtonBtn));
-
+            serverProperties.setAlignment(Pos.CENTER);
             warningLabel.setPadding(labelPadding);
             warningLabel.setMaxWidth(Double.MAX_VALUE);
             helpLabel.setAlignment(Pos.CENTER_RIGHT);
@@ -275,11 +358,8 @@ public class GUI extends JFXTabPane {
             setVGrow(configTable);
             bottomBox.getChildren().addAll(serverProperties, configTable, labelBox);
             //endregion
-
-            closeBtn.setStyle(buttonStyle);
-
-            setVGrow(bottomBox, closeBtn);
-            this.getChildren().addAll(topBox, bottomBox, closeBtn);
+            setVGrow(bottomBox);
+            this.getChildren().addAll(topBox, bottomBox);
             this.setPadding(new Insets(8));
             this.setSpacing(8);
         }
@@ -293,16 +373,12 @@ public class GUI extends JFXTabPane {
         }
     }
 
-
-    void RenamePopup(MinecraftServer server) {
-
-    }
-
     private void popupAddServer() {
         VBox vBox = new VBox();
 
         final Stage dialog = new Stage();
         dialog.initModality(Modality.APPLICATION_MODAL);
+
         dialog.initOwner(stage);
         Scene dialogScene = new Scene(vBox);
         dialog.setScene(dialogScene);
@@ -312,6 +388,7 @@ public class GUI extends JFXTabPane {
     private void popUp(VBox vBox) {
         final Stage dialog = new Stage();
         dialog.initModality(Modality.APPLICATION_MODAL);
+
         dialog.initOwner(stage);
         Scene dialogScene = new Scene(new Group(vBox));
         dialog.setScene(dialogScene);

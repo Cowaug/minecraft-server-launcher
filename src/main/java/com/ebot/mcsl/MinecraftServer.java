@@ -25,8 +25,13 @@ public class MinecraftServer {
     MinecraftServer(String serverName, String serverLocation) {
         this.serverName = serverName;
         this.serverLocation = serverLocation;
-        loadConfig();
+        loadServerConfig();
+        loadLaunchConfig();
         loadJarList();
+    }
+
+    public int getMaxRam() {
+        return maxRam;
     }
 
     public void setServerName(String serverName) {
@@ -35,13 +40,14 @@ public class MinecraftServer {
 
     public void renameServerLocation(String newName) {
         File file = new File(serverLocation);
-        serverLocation = serverLocation.substring(0, serverLocation.lastIndexOf("\\")) +"\\" +newName;
+        serverLocation = serverLocation.substring(0, serverLocation.lastIndexOf("\\")) + "\\" + newName;
         File newFile = new File(serverLocation);
         file.renameTo(newFile);
     }
 
     public void setServerFileName(String serverFileName) {
         this.serverFileName = serverFileName;
+        saveLaunchConfig();
     }
 
     public String getServerFileName() {
@@ -130,9 +136,10 @@ public class MinecraftServer {
 
     public void setMaxRam(int maxRam) {
         this.maxRam = maxRam;
+        saveLaunchConfig();
     }
 
-    public void loadConfig() {
+    public void loadServerConfig() {
         try (InputStream input = new FileInputStream(serverLocation + "\\" + "server.properties")) {
             CheckValue boolCheck = c -> Arrays.asList("true", "false").contains(c);
             CheckValue gameModeCheck = c -> Arrays.asList("creative", "survival", "spectator", "adventure").contains(c);
@@ -225,10 +232,41 @@ public class MinecraftServer {
 
     }
 
-    public void saveConfig() {
+
+
+    public void saveServerConfig() {
         try (OutputStream output = new FileOutputStream(serverLocation + "\\" + "server.properties")) {
             Properties prop = new Properties();
             configs.forEach(e -> prop.setProperty(e.getAttribute(), e.getValue()));
+            prop.store(output, null);
+        } catch (IOException io) {
+            io.printStackTrace();
+        }
+    }
+
+    public void loadLaunchConfig() {
+        try (InputStream input = new FileInputStream(serverLocation + "\\" + "mcsl.properties")) {
+            Properties prop = new Properties();
+            prop.load(input);
+            prop.forEach((k, v) -> {
+                switch (k.toString()) {
+                    case "jar-file":
+                        serverFileName = v.toString();
+                        break;
+                    case "max-ram":
+                        maxRam = Integer.parseInt(v.toString());
+                }
+            });
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+    }
+    public void saveLaunchConfig() {
+        try (OutputStream output = new FileOutputStream(serverLocation + "\\" + "mcsl.properties")) {
+            Properties prop = new Properties();
+            prop.setProperty("jar-file", serverFileName);
+            prop.setProperty("max-ram", String.valueOf(maxRam));
             prop.store(output, null);
         } catch (IOException io) {
             io.printStackTrace();

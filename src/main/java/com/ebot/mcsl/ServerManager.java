@@ -21,6 +21,10 @@ public class ServerManager {
         return minecraftServers;
     }
 
+    public static void removeMinecraftServer(MinecraftServer minecraftServer) {
+        minecraftServers.remove(minecraftServer);
+    }
+
     public static MinecraftServer getMinecraftServer(String serverName) {
         return ((MinecraftServer) minecraftServers.stream().filter(e -> e.getServerName().equals(serverName)).toArray()[0]);
     }
@@ -38,6 +42,15 @@ public class ServerManager {
             if (name.contains(e)) unValid.set(true);
         });
         return minecraftServers.stream().anyMatch(e -> e.getServerName().equals(name)) || unValid.get();
+    }
+
+    public static void terminateAllServer() {
+        minecraftServers.forEach(minecraftServer -> {
+            try {
+                minecraftServer.forceStop(null);
+            } catch (Exception ignored) {
+            }
+        });
     }
 
 }
