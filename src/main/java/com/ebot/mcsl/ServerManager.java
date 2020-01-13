@@ -1,9 +1,9 @@
 package com.ebot.mcsl;
 
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ServerManager {
     private static ArrayList<MinecraftServer> minecraftServers = new ArrayList<>();
@@ -17,8 +17,12 @@ public class ServerManager {
         minecraftServers.addAll(UserConfig.readServerLocation());
     }
 
-    public static MinecraftServer getMinecraftServer(String serverName){
-        return ((MinecraftServer) minecraftServers.stream().filter(e-> e.getServerName().equals(serverName)).toArray()[0]);
+    public static ArrayList<MinecraftServer> getMinecraftServers() {
+        return minecraftServers;
+    }
+
+    public static MinecraftServer getMinecraftServer(String serverName) {
+        return ((MinecraftServer) minecraftServers.stream().filter(e -> e.getServerName().equals(serverName)).toArray()[0]);
     }
 
     public static String[] getServerList() {
@@ -28,5 +32,12 @@ public class ServerManager {
         return arrayList.toArray(new String[0]);
     }
 
+    public static boolean isDuplicate(String name) {
+        AtomicBoolean unValid = new AtomicBoolean(false);
+        Arrays.asList("/", "\\", "*", ":", "?", "\"", "<", ">", "|").forEach(e -> {
+            if (name.contains(e)) unValid.set(true);
+        });
+        return minecraftServers.stream().anyMatch(e -> e.getServerName().equals(name)) || unValid.get();
+    }
 
 }

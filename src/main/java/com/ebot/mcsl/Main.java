@@ -13,13 +13,16 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        Parent root = new GUI(primaryStage);
+        Parent root = new GUI(primaryStage,this);
 
         primaryStage.setTitle("Minecraft Server Launcher");
         primaryStage.setScene(new Scene(root, 1280, 720));
 //        primaryStage.setResizable(false);
 //        primaryStage.initStyle(StageStyle.UNDECORATED);
         primaryStage.show();
+        primaryStage.setOnCloseRequest(event -> {
+            UserConfig.writeServerLocation(ServerManager.getMinecraftServers());
+        });
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")

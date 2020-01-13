@@ -4,6 +4,7 @@ import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TextArea;
 
 import java.io.*;
@@ -18,11 +19,43 @@ public class MinecraftServer {
     private int maxRam = 1024;
     private String serverFileName = "server.jar";
     private ArrayList<Config> configs = new ArrayList<>();
+    private Tab launchedTab = null;
+    private ArrayList<String> jarFileList = new ArrayList<>();
 
     MinecraftServer(String serverName, String serverLocation) {
         this.serverName = serverName;
         this.serverLocation = serverLocation;
         loadConfig();
+        loadJarList();
+    }
+
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
+    }
+
+    public void renameServerLocation(String newName) {
+        File file = new File(serverLocation);
+        serverLocation = serverLocation.substring(0, serverLocation.lastIndexOf("\\")) +"\\" +newName;
+        File newFile = new File(serverLocation);
+        file.renameTo(newFile);
+    }
+
+    public void setServerFileName(String serverFileName) {
+        this.serverFileName = serverFileName;
+    }
+
+    public String getServerFileName() {
+        return serverFileName;
+    }
+
+    void loadJarList() {
+        File[] file = new File(serverLocation).listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
+        if (file == null) return;
+        Arrays.asList(file).forEach(e -> jarFileList.add(e.getName()));
+    }
+
+    public ArrayList<String> getJarFileList() {
+        return jarFileList;
     }
 
     String getServerLocation() {
@@ -31,6 +64,18 @@ public class MinecraftServer {
 
     String getServerName() {
         return serverName;
+    }
+
+    public Tab getLaunchedTab() {
+        return launchedTab;
+    }
+
+    public boolean isLaunched() {
+        return launchedTab != null;
+    }
+
+    public void setLaunchedTab(Tab launchedTab) {
+        this.launchedTab = launchedTab;
     }
 
     public void startServer(final TextArea textArea) {
@@ -83,6 +128,10 @@ public class MinecraftServer {
         }).start();
     }
 
+    public void setMaxRam(int maxRam) {
+        this.maxRam = maxRam;
+    }
+
     public void loadConfig() {
         try (InputStream input = new FileInputStream(serverLocation + "\\" + "server.properties")) {
             CheckValue boolCheck = c -> Arrays.asList("true", "false").contains(c);
@@ -93,7 +142,6 @@ public class MinecraftServer {
             Properties prop = new Properties();
             prop.load(input);
             prop.forEach((k, v) -> {
-                Config config;
                 CheckValue checkValueFunction;
                 switch (k.toString()) {
                     case "allow-flight":
@@ -122,7 +170,6 @@ public class MinecraftServer {
                         checkValueFunction = c -> Integer.parseInt(c) <= 4 && Integer.parseInt(c) >= 1;
                         break;
 
-
                     case "network-compression-threshold":
                         checkValueFunction = c -> Integer.parseInt(c) <= -1;
                         break;
@@ -133,7 +180,6 @@ public class MinecraftServer {
 
                     case "spawn-protection":
                     case "player-idle-timeout":
-
                     case "max-players":
                         checkValueFunction = c -> Integer.parseInt(c) >= 0;
                         break;
@@ -145,23 +191,29 @@ public class MinecraftServer {
                     case "max-world-size":
                         checkValueFunction = c -> Integer.parseInt(c) <= 29999984 && Integer.parseInt(c) >= 1;
                         break;
+
                     case "rcon.port":
                     case "query.port":
                     case "server-port":
                         checkValueFunction = c -> Short.parseShort(c) > 0;
                         break;
+
                     case "view-distance":
                         checkValueFunction = c -> Short.parseShort(c) >= 3 && Short.parseShort(c) <= 32;
                         break;
+
                     case "gamemode":
                         checkValueFunction = gameModeCheck;
                         break;
+
                     case "level-type":
                         checkValueFunction = levelTypeCheck;
                         break;
+
                     case "difficulty":
                         checkValueFunction = difficultyCheck;
                         break;
+
                     default:
                         checkValueFunction = c -> true;
                 }
@@ -178,7 +230,6 @@ public class MinecraftServer {
             Properties prop = new Properties();
             configs.forEach(e -> prop.setProperty(e.getAttribute(), e.getValue()));
             prop.store(output, null);
-//            System.out.println(prop);
         } catch (IOException io) {
             io.printStackTrace();
         }
@@ -191,19 +242,12 @@ public class MinecraftServer {
     public static class Config extends RecursiveTreeObject<Config> {
         private StringProperty attribute;
         private StringProperty value;
-        private String[] validAttr;
         private CheckValue checkValueFunction;
 
         public Config(String attribute, String value, CheckValue checkValueFunction) {
             this.attribute = new SimpleStringProperty(attribute);
             this.value = new SimpleStringProperty(value);
             this.checkValueFunction = checkValueFunction;
-        }
-
-        public Config(String attribute, String value) {
-            this.attribute = new SimpleStringProperty(attribute);
-            this.value = new SimpleStringProperty(value);
-            this.validAttr = new String[]{};
         }
 
         public String getAttribute() {
@@ -227,8 +271,6 @@ public class MinecraftServer {
                 this.value.set(value);
             else throw new Exception();
         }
-
-
     }
 
     interface CheckValue {
