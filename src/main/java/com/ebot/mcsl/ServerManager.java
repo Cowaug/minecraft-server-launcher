@@ -17,6 +17,20 @@ public class ServerManager {
         minecraftServers.addAll(UserConfig.readServerLocation());
     }
 
+    public static void addExistServer(String name,String path,String serverFileName){
+        if(minecraftServers.stream().anyMatch(minecraftServer -> minecraftServer.getServerLocation().equals(path))){
+            minecraftServers.forEach(minecraftServer -> {
+                if(minecraftServer.getServerLocation().equals(path)){
+                    minecraftServer.setServerName(name);
+                    minecraftServer.setServerFileName(serverFileName);
+                }
+            });
+        }else{
+            minecraftServers.add(new MinecraftServer(name,path,serverFileName));
+        }
+
+    }
+
     public static ArrayList<MinecraftServer> getMinecraftServers() {
         return minecraftServers;
     }

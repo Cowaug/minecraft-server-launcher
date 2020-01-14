@@ -3,7 +3,6 @@ package com.ebot.mcsl;
 import com.jfoenix.controls.*;
 import com.sun.deploy.uitoolkit.impl.fx.HostServicesFactory;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -16,12 +15,15 @@ import javafx.scene.effect.BoxBlur;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class GUI extends JFXTabPane {
     private Stage stage;
@@ -75,6 +77,7 @@ public class GUI extends JFXTabPane {
         private MinecraftServer currentServer;
 
         MainTab() {
+            //region Variables
             HBox topBox = new HBox(8);
 
             HBox selectServerBox = new HBox(8);
@@ -102,9 +105,24 @@ public class GUI extends JFXTabPane {
             HBox labelBox = new HBox(8);
             Label warningLabel = new Label("");
             Hyperlink helpLabel = new Hyperlink("What are these values mean?");
+            //endregion
+
+            //region Styles
+            GUI.this.setPadding(labelPadding, selectServerLabel, serverPathLabel, jarFileLabel, warningLabel, ramLabel);
+            GUI.this.setPadding(boxPadding, topBox, selectServerBox, addServerBox, serverProperties, labelBox);
+            GUI.this.setPadding(boxPadding, bottomBox);
+            GUI.this.setStyle(boxStyle, selectServerBox, addServerBox, bottomBox);
+            GUI.this.setStyle(buttonStyle, openServerLocationBtn, addExistServerBtn, addNewServerBtn, renameServerBtn, startServerBtn);
+            GUI.this.setStyle(buttonRedStyle, deleteButtonBtn);
+            GUI.this.setVGrow(configTable, bottomBox);
+            GUI.this.setHGrow(selectServerLabel, serverList, openServerLocationBtn, serverPathLabel, serverPath, selectServerBox,
+                    jarFileLabel, jarFileSelect, ramLabel, serverRamList, startServerBtn, renameServerBtn, deleteButtonBtn,
+                    warningLabel, helpLabel);
+            GUI.this.setEditable(false, serverPath);
+            GUI.this.setDisable(true, bottomBox,openServerLocationBtn);
+            //endregion
 
             //region Top box
-            selectServerLabel.setPadding(labelPadding);
             serverList.getItems().addAll(ServerManager.getServerList());
             serverList.setOnAction(event -> {
                 try {
@@ -119,17 +137,13 @@ public class GUI extends JFXTabPane {
                 jarFileSelect.getItems().clear();
                 jarFileSelect.getItems().addAll(currentServer.getJarFileList());
                 jarFileSelect.getSelectionModel().select(currentServer.getServerFileName());
-                serverRamList.getSelectionModel().select(currentServer.getMaxRam()+" MB ("+(float)(currentServer.getMaxRam()/1024.0)+" GB)");
+                serverRamList.getSelectionModel().select(currentServer.getMaxRam() + " MB (" + (float) (currentServer.getMaxRam() / 1024.0) + " GB)");
                 if (currentServer.isLaunched()) {
                     warningLabel.setText("Server is opened. Change will not affected unless you reboot the server");
                 } else {
                     warningLabel.setText("");
                 }
             });
-            serverPath.setEditable(false);
-            serverPathLabel.setPadding(labelPadding);
-            openServerLocationBtn.setDisable(true);
-            openServerLocationBtn.setStyle(buttonStyle);
             openServerLocationBtn.setOnAction(event -> {
                 try {
                     Runtime.getRuntime().exec("explorer.exe \\select," + currentServer.getServerLocation());
@@ -137,23 +151,123 @@ public class GUI extends JFXTabPane {
                     e.printStackTrace();
                 }
             });
-            selectServerBox.setStyle(boxStyle);
-            selectServerBox.setPadding(boxPadding);
-            selectServerBox.getChildren().addAll(setHGrow(selectServerLabel, serverList, openServerLocationBtn, serverPathLabel, serverPath));
+            addNewServerBtn.setOnAction(event -> {
 
-            addNewServerBtn.setStyle(buttonStyle);
-            addExistServerBtn.setStyle(buttonStyle);
-            addServerBox.setStyle(boxStyle);
-            addServerBox.setPadding(boxPadding);
+            });
+            addExistServerBtn.setOnAction(event -> {
+                final Stage dialog = new Stage();
+                dialog.initModality(Modality.APPLICATION_MODAL);
+                dialog.initStyle(StageStyle.UNDECORATED);
+                dialog.initOwner(stage);
+                GUI.this.setEffect(new BoxBlur(4, 4, 4));
+
+                Scene dialogScene;
+
+                VBox mainBox = new VBox(8);
+                //reuse Path label
+                Label nameLabel = new Label("Server name");
+                nameLabel.setPadding(labelPadding);
+                JFXTextField pathField = new JFXTextField();
+                JFXCheckBox sameAsFolder = new JFXCheckBox("Same as folder");
+                sameAsFolder.setDisable(true);
+                AtomicReference<String> oldName = new AtomicReference<>();
+                JFXButton changeBtn = new JFXButton("Select folder");
+                JFXTextField nameField = new JFXTextField("Server");
+                //reuse Jar label
+                JFXComboBox<String> jarList = new JFXComboBox<>();
+                JFXButton confirmBtn = new JFXButton("Add");
+                JFXButton cancelButton = new JFXButton("Cancel");
+
+
+                cancelButton.setOnAction(e -> {
+                    dialog.close();
+                    GUI.this.setEffect(new BoxBlur(0, 0, 0));
+
+                });
+                sameAsFolder.setOnAction(e->{
+                    if(sameAsFolder.isSelected()){
+                        oldName.set(nameField.getText());
+                        nameField.setText(pathField.getText().substring(pathField.getText().lastIndexOf("\\")+1));
+                    }else {
+                        nameField.setText(oldName.get());
+                    }
+                    confirmBtn.setDisable(ServerManager.isDuplicate(nameField.getText()));
+                });
+                nameField.setOnKeyReleased(e -> {
+                    if (ServerManager.isDuplicate(nameField.getText()) || nameField.getText().equals("")) {
+                        confirmBtn.setDisable(true);
+                    } else {
+                        confirmBtn.setDisable(false);
+                    }
+                });
+                changeBtn.setOnAction(e -> {
+                    File selectedDirectory;
+                    try{
+                        DirectoryChooser directoryChooser = new DirectoryChooser();
+                        directoryChooser.setInitialDirectory(new File(pathField.getText()));
+                        selectedDirectory = directoryChooser.showDialog(stage);
+                    }catch (Exception ex){
+                        selectedDirectory = new DirectoryChooser().showDialog(stage);
+                    }
+
+                    if (selectedDirectory != null) {
+                        sameAsFolder.setDisable(false);
+                        pathField.setText(selectedDirectory.getAbsolutePath());
+                        jarList.getItems().clear();
+                        File[] file = new File(pathField.getText()).listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
+                        if (file == null || file.length == 0) {
+                            confirmBtn.setDisable(true);
+                            return;
+                        }
+                        Arrays.asList(file).forEach(fileJar -> jarList.getItems().add(fileJar.getName()));
+                        if(jarList.getItems().contains("server.jar")){
+                            jarList.getSelectionModel().select("server.jar");
+                        }else {
+                            jarList.getSelectionModel().selectFirst();
+                        }
+                        confirmBtn.setDisable(ServerManager.isDuplicate(nameField.getText()));
+                    }
+                });
+                confirmBtn.setDisable(true);
+                confirmBtn.setOnAction(e -> {
+                    ServerManager.addExistServer(nameField.getText(),pathField.getText(),jarList.getSelectionModel().getSelectedItem());
+                    serverList.getItems().clear();
+                    serverList.getItems().addAll(ServerManager.getServerList());
+                    serverList.getSelectionModel().select(nameField.getText());
+                    dialog.close();
+                    UserConfig.writeServerLocation(ServerManager.getMinecraftServers());
+                    GUI.this.setEffect(new BoxBlur(0, 0, 0));
+                });
+                confirmBtn.setMaxWidth(Double.MAX_VALUE);
+                cancelButton.setMaxWidth(Double.MAX_VALUE);
+                changeBtn.setStyle(buttonStyle);
+                confirmBtn.setStyle(buttonStyle);
+                cancelButton.setStyle(buttonStyle);
+
+                HBox nameBox = new HBox(8);
+                nameBox.getChildren().addAll(setHGrow(nameLabel,nameField,sameAsFolder));
+
+                HBox pathBox = new HBox(8);
+                pathBox.getChildren().addAll(setHGrow(serverPathLabel, pathField, changeBtn));
+
+                HBox jarBox = new HBox(8);
+                jarBox.getChildren().addAll(setHGrow(jarFileLabel, jarList));
+                jarList.setMaxWidth(Double.MAX_VALUE);
+
+                mainBox.setPadding(boxPadding);
+                mainBox.getChildren().addAll(nameBox, pathBox, jarBox, confirmBtn, cancelButton);
+                mainBox.setStyle(dialogStyle);
+                mainBox.setPrefWidth(GUI.this.getWidth()/2);
+                dialogScene = new Scene(new Group(mainBox));
+                dialog.setScene(dialogScene);
+                dialog.show();
+            });
+            selectServerBox.getChildren().addAll(selectServerLabel, serverList, openServerLocationBtn, serverPathLabel, serverPath);
             addServerBox.getChildren().addAll(addNewServerBtn, addExistServerBtn);
-            HBox.setHgrow(selectServerBox, Priority.ALWAYS);
             topBox.getChildren().addAll(selectServerBox, addServerBox);
             //endregion
 
             //region Bottom Box
-            bottomBox.setDisable(true);
-            jarFileLabel.setPadding(labelPadding);
-            ramLabel.setPadding(labelPadding);
             for (float i = 0; i <= 16; i = i + 0.25f) {
                 serverRamList.getItems().add((int) (i * 1024) + " MB (" + i + " GB)");
             }
@@ -161,7 +275,6 @@ public class GUI extends JFXTabPane {
             serverRamList.setOnAction(event -> {
                 currentServer.setMaxRam(Integer.parseInt(serverRamList.getSelectionModel().getSelectedItem().split(" ")[0]));
             });
-            startServerBtn.setStyle(buttonStyle);
             startServerBtn.setOnAction(event -> {
                 if (currentServer.isLaunched()) {
                     GUI.this.getSelectionModel().select(currentServer.getLaunchedTab());
@@ -175,7 +288,6 @@ public class GUI extends JFXTabPane {
                 GUI.this.getSelectionModel().select(newTab);
                 warningLabel.setText("Server is opened. Change will not affected unless you reboot the server");
             });
-            renameServerBtn.setStyle(buttonStyle);
             renameServerBtn.setOnAction(event -> {
                 final Stage dialog = new Stage();
                 dialog.initModality(Modality.APPLICATION_MODAL);
@@ -190,8 +302,8 @@ public class GUI extends JFXTabPane {
                 JFXCheckBox applyToFolder = new JFXCheckBox("Rename folder to match server name");
                 JFXButton confirmBtn = new JFXButton("Rename");
                 JFXButton cancelButton = new JFXButton("Cancel");
-                applyToFolder.setOnAction(e->{
-                    if(applyToFolder.isSelected())
+                applyToFolder.setOnAction(e -> {
+                    if (applyToFolder.isSelected())
                         confirmBtn.setDisable(false);
                 });
                 cancelButton.setOnAction(e -> {
@@ -219,6 +331,7 @@ public class GUI extends JFXTabPane {
                     serverList.getSelectionModel().select(nameField.getText());
                     serverPath.setText(currentServer.getServerLocation());
                     dialog.close();
+                    UserConfig.writeServerLocation(ServerManager.getMinecraftServers());
                     GUI.this.setEffect(new BoxBlur(0, 0, 0));
                 });
                 confirmBtn.setMaxWidth(Double.MAX_VALUE);
@@ -232,7 +345,6 @@ public class GUI extends JFXTabPane {
                 dialog.setScene(dialogScene);
                 dialog.show();
             });
-            deleteButtonBtn.setStyle(buttonRedStyle);
             deleteButtonBtn.setOnAction(event -> {
                 final Stage dialog = new Stage();
                 dialog.initModality(Modality.APPLICATION_MODAL);
@@ -256,6 +368,7 @@ public class GUI extends JFXTabPane {
                     ServerManager.removeMinecraftServer(currentServer);
                     reload();
                     dialog.close();
+                    UserConfig.writeServerLocation(ServerManager.getMinecraftServers());
                     GUI.this.setEffect(new BoxBlur(0, 0, 0));
 
                 });
@@ -265,6 +378,7 @@ public class GUI extends JFXTabPane {
                     ServerManager.removeMinecraftServer(currentServer);
                     reload();
                     dialog.close();
+                    UserConfig.writeServerLocation(ServerManager.getMinecraftServers());
                     GUI.this.setEffect(new BoxBlur(0, 0, 0));
 
                 });
@@ -283,6 +397,7 @@ public class GUI extends JFXTabPane {
                 dialog.show();
             });
 
+            //region config table
             JFXTreeTableColumn<MinecraftServer.Config, String> attrCol = new JFXTreeTableColumn<>("Attribute");
 
             attrCol.setCellValueFactory((TreeTableColumn.CellDataFeatures<MinecraftServer.Config, String> param) -> {
@@ -332,8 +447,9 @@ public class GUI extends JFXTabPane {
             configTable.setShowRoot(false);
             configTable.sort();
             configTable.setMaxHeight(Double.MAX_VALUE);
+            //endregion
 
-            jarFileSelect.prefWidthProperty().bind(serverProperties.widthProperty().divide(3));
+            jarFileSelect.prefWidthProperty().bind(serverProperties.widthProperty().divide(2.25));
             jarFileSelect.setOnAction(event -> {
                 try {
                     if (!jarFileSelect.getSelectionModel().getSelectedItem().equals(""))
@@ -343,22 +459,18 @@ public class GUI extends JFXTabPane {
                 }
 
             });
-            serverProperties.getChildren().addAll(setHGrow(jarFileLabel, jarFileSelect, ramLabel, serverRamList, startServerBtn, renameServerBtn, deleteButtonBtn));
+            serverProperties.getChildren().addAll(jarFileLabel, jarFileSelect, ramLabel, serverRamList, startServerBtn, renameServerBtn, deleteButtonBtn);
             serverProperties.setAlignment(Pos.CENTER);
-            warningLabel.setPadding(labelPadding);
             warningLabel.setMaxWidth(Double.MAX_VALUE);
             helpLabel.setAlignment(Pos.CENTER_RIGHT);
             helpLabel.setOnAction(event -> {
                 HostServicesFactory.getInstance(application).showDocument("https://minecraft.gamepedia.com/Server.properties#Minecraft_server_properties");
             });
-            labelBox.getChildren().addAll(setHGrow(warningLabel, helpLabel));
+            labelBox.getChildren().addAll(warningLabel, helpLabel);
 
-            bottomBox.setPadding(boxPadding);
-            bottomBox.setStyle(boxStyle);
-            setVGrow(configTable);
             bottomBox.getChildren().addAll(serverProperties, configTable, labelBox);
             //endregion
-            setVGrow(bottomBox);
+
             this.getChildren().addAll(topBox, bottomBox);
             this.setPadding(new Insets(8));
             this.setSpacing(8);
@@ -373,28 +485,6 @@ public class GUI extends JFXTabPane {
         }
     }
 
-    private void popupAddServer() {
-        VBox vBox = new VBox();
-
-        final Stage dialog = new Stage();
-        dialog.initModality(Modality.APPLICATION_MODAL);
-
-        dialog.initOwner(stage);
-        Scene dialogScene = new Scene(vBox);
-        dialog.setScene(dialogScene);
-        dialog.show();
-    }
-
-    private void popUp(VBox vBox) {
-        final Stage dialog = new Stage();
-        dialog.initModality(Modality.APPLICATION_MODAL);
-
-        dialog.initOwner(stage);
-        Scene dialogScene = new Scene(new Group(vBox));
-        dialog.setScene(dialogScene);
-        dialog.show();
-    }
-
     private Node[] setHGrow(Node... nodes) {
         Arrays.asList(nodes).forEach(e -> HBox.setHgrow(e, Priority.ALWAYS));
         return nodes;
@@ -403,6 +493,36 @@ public class GUI extends JFXTabPane {
     private Node[] setVGrow(Node... nodes) {
         Arrays.asList(nodes).forEach(e -> VBox.setVgrow(e, Priority.ALWAYS));
         return nodes;
+    }
+
+    private Node[] setStyle(String style, Node... nodes) {
+        Arrays.asList(nodes).forEach(e -> e.setStyle(style));
+        return nodes;
+    }
+
+    private Node[] setPadding(Insets padding, Label... labels) {
+        Arrays.asList(labels).forEach(e -> e.setPadding(padding));
+        return labels;
+    }
+
+    private Node[] setPadding(Insets padding, HBox... HBox) {
+        Arrays.asList(HBox).forEach(e -> e.setPadding(padding));
+        return HBox;
+    }
+
+    private Node[] setPadding(Insets padding, VBox... VBox) {
+        Arrays.asList(VBox).forEach(e -> e.setPadding(padding));
+        return VBox;
+    }
+
+    private Node[] setDisable(boolean disable, Node... nodes) {
+        Arrays.asList(nodes).forEach(e -> e.setDisable(disable));
+        return nodes;
+    }
+
+    private Node[] setEditable(boolean editable, JFXTextField... jfxTextFields) {
+        Arrays.asList(jfxTextFields).forEach(e -> e.setEditable(editable));
+        return jfxTextFields;
     }
 }
 

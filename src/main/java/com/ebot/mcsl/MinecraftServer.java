@@ -30,6 +30,15 @@ public class MinecraftServer {
         loadJarList();
     }
 
+    MinecraftServer(String serverName, String serverLocation, String serverFileName) {
+        this.serverName = serverName;
+        this.serverLocation = serverLocation;
+        this.serverFileName = serverFileName;
+        loadServerConfig();
+        loadLaunchConfig();
+        loadJarList();
+    }
+
     public int getMaxRam() {
         return maxRam;
     }
@@ -40,9 +49,11 @@ public class MinecraftServer {
 
     public void renameServerLocation(String newName) {
         File file = new File(serverLocation);
-        serverLocation = serverLocation.substring(0, serverLocation.lastIndexOf("\\")) + "\\" + newName;
-        File newFile = new File(serverLocation);
-        file.renameTo(newFile);
+        String newServerLocation = serverLocation.substring(0, serverLocation.lastIndexOf("\\")) + "\\" + newName;
+        File newFile = new File(newServerLocation);
+        if (file.renameTo(newFile)) {
+            serverLocation = newServerLocation;
+        }
     }
 
     public void setServerFileName(String serverFileName) {
@@ -227,11 +238,10 @@ public class MinecraftServer {
                 configs.add(new Config(k.toString(), v.toString(), checkValueFunction));
             });
         } catch (IOException ex) {
-            ex.printStackTrace();
+            System.out.print(ex.getMessage());
         }
 
     }
-
 
 
     public void saveServerConfig() {
@@ -258,10 +268,11 @@ public class MinecraftServer {
                 }
             });
         } catch (IOException ex) {
-            ex.printStackTrace();
+            System.out.print(ex.getMessage());
         }
 
     }
+
     public void saveLaunchConfig() {
         try (OutputStream output = new FileOutputStream(serverLocation + "\\" + "mcsl.properties")) {
             Properties prop = new Properties();
@@ -269,7 +280,7 @@ public class MinecraftServer {
             prop.setProperty("max-ram", String.valueOf(maxRam));
             prop.store(output, null);
         } catch (IOException io) {
-            io.printStackTrace();
+            System.out.print(io.getMessage());
         }
     }
 
