@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ServerManager {
@@ -75,6 +76,8 @@ public class ServerManager {
         ArrayList<String> arrayList = new ArrayList<>();
         minecraftServers.forEach(e -> arrayList.add(e.getServerName()));
         if (arrayList.size() == 0) return new String[]{};
+        Collections.sort(arrayList);
+        Collections.reverse(arrayList);
         return arrayList.toArray(new String[0]);
     }
 

@@ -17,7 +17,7 @@ public class MinecraftServer {
     private Process proc;
     private String serverName;
     private String serverLocation;
-    private int maxRam = 1024;
+    private int maxRam = 512;
     private String serverFileName = "server.jar";
     private ArrayList<Config> configs = new ArrayList<>();
     private Tab launchedTab = null;

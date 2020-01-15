@@ -5,7 +5,6 @@ import com.sun.deploy.uitoolkit.impl.fx.HostServicesFactory;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -15,7 +14,6 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTreeTableCell;
 import javafx.scene.effect.BoxBlur;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -27,6 +25,7 @@ import javafx.stage.StageStyle;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class GUI extends JFXTabPane {
@@ -87,15 +86,15 @@ public class GUI extends JFXTabPane {
             JFXButton startBtn = new JFXButton("Start");
             JFXButton stopBtn = new JFXButton("Stop");
             JFXButton closeBtn = new JFXButton("Close");
-            JFXButton terminateBtn= new JFXButton("Terminate");
+            JFXButton terminateBtn = new JFXButton("Terminate");
 
             //region Style
             this.setSpacing(8);
             this.setPadding(new Insets(16));
-            GUI.this.setStyle(buttonStyle,startBtn,stopBtn);
-            GUI.this.setStyle(buttonRedStyle,terminateBtn,closeBtn);
-            GUI.this.setHGrow(startBtn,stopBtn,closeBtn,terminateBtn,commandLine);
-            GUI.this.setPadding(boxPadding,btnBox);
+            GUI.this.setStyle(buttonStyle, startBtn, stopBtn);
+            GUI.this.setStyle(buttonRedStyle, terminateBtn, closeBtn);
+            GUI.this.setHGrow(startBtn, stopBtn, closeBtn, terminateBtn, commandLine);
+            GUI.this.setPadding(boxPadding, btnBox);
 
             setVGrow(console);
             console.setEditable(false);
@@ -108,8 +107,7 @@ public class GUI extends JFXTabPane {
             console.setPadding(boxPadding);
             //endregion
             commandLine.setOnKeyPressed(ke -> {
-                if (ke.getCode().equals(KeyCode.ENTER))
-                {
+                if (ke.getCode().equals(KeyCode.ENTER)) {
                     minecraftServer.writeCmd(commandLine.getText());
                     commandLine.setText("");
                 }
@@ -118,7 +116,7 @@ public class GUI extends JFXTabPane {
             stopBtn.setDisable(true);
             terminateBtn.setDisable(true);
             startBtn.setOnAction(event -> {
-                minecraftServer.startServer(console,startBtn,stopBtn,closeBtn,terminateBtn);
+                minecraftServer.startServer(console, startBtn, stopBtn, closeBtn, terminateBtn);
                 startBtn.setDisable(true);
                 stopBtn.setDisable(false);
                 terminateBtn.setDisable(false);
@@ -139,8 +137,8 @@ public class GUI extends JFXTabPane {
                 GUI.this.getTabs().remove(tab);
             });
 
-            btnBox.getChildren().addAll(startBtn,stopBtn,terminateBtn,closeBtn);
-            this.getChildren().addAll(console,commandLine,btnBox);
+            btnBox.getChildren().addAll(startBtn, stopBtn, terminateBtn, closeBtn);
+            this.getChildren().addAll(console, commandLine, btnBox);
         }
     }
 
@@ -155,7 +153,7 @@ public class GUI extends JFXTabPane {
             Label selectServerLabel = new Label("Select server");
             JFXComboBox<String> serverList = new JFXComboBox<>();
             JFXButton openServerLocationBtn = new JFXButton("Open server location");
-            Label serverPathLabel = new Label("Path: ");
+            Label serverPathLabel = new Label("Path ");
             JFXTextField serverPath = new JFXTextField();
 
             HBox addServerBox = new HBox(8);
@@ -235,20 +233,22 @@ public class GUI extends JFXTabPane {
                 VBox mainBox = new VBox(8);
                 HBox nameBox = new HBox(8);
                 HBox pathBox = new HBox(8);
-                //reuse Path label
+                HBox versionBox = new HBox(8);
+                Label pathLabel = new Label("Path");
+                pathLabel.setPadding(labelPadding);
                 Label nameLabel = new Label("Server name");
                 nameLabel.setPadding(labelPadding);
+                Label versionLabel = new Label("Sever version");
+                versionLabel.setPadding(labelPadding);
                 JFXTextField pathField = new JFXTextField();
                 AtomicReference<String> oldName = new AtomicReference<>();
                 JFXButton changeBtn = new JFXButton("Select folder");
                 JFXTextField nameField = new JFXTextField("Server");
-                //reuse Jar label
                 JFXComboBox<String> versionList = new JFXComboBox<>();
-                versionList.getItems().addAll("Vanilla 1.15.1", "Vanilla 1.15");
-                versionList.getSelectionModel().select(0);
                 JFXButton confirmBtn = new JFXButton("Add");
                 JFXButton cancelButton = new JFXButton("Cancel");
                 Label notifyLabel = new Label("Not ready");
+                AtomicBoolean preferServerVersion = new AtomicBoolean(true);
                 JFXProgressBar jfxBar = new JFXProgressBar();
                 jfxBar.setProgress(0.0);
                 cancelButton.setOnAction(e -> {
@@ -257,10 +257,14 @@ public class GUI extends JFXTabPane {
 
                 });
                 nameField.setOnKeyReleased(e -> {
+                    preferServerVersion.set(false);
                     try {
-                        if (ServerManager.isDuplicate(nameField.getText()) || nameField.getText().equals("")) {
+                        if (ServerManager.isDuplicate(nameField.getText()) || nameField.getText().equals("") || pathField.getText().equals("")) {
                             confirmBtn.setDisable(true);
-                            notifyLabel.setText("Not ready");
+                            notifyLabel.setText("Duplicate / Invalid server name");
+                        } else if ( pathField.getText().equals("")) {
+                            confirmBtn.setDisable(true);
+                            notifyLabel.setText("Invalid install path");
                         } else {
                             confirmBtn.setDisable(false);
                             notifyLabel.setText("Ready");
@@ -282,19 +286,50 @@ public class GUI extends JFXTabPane {
 
                     if (selectedDirectory != null) {
                         pathField.setText((selectedDirectory.getAbsolutePath() + "\\" + nameField.getText()).replace(":\\\\", ":\\"));
-                        confirmBtn.setDisable(ServerManager.isDuplicate(nameField.getText()));
-                        if(confirmBtn.isDisable()){
-                            notifyLabel.setText("Not ready");
-                        }else {
+                        confirmBtn.setDisable(ServerManager.isDuplicate(nameField.getText()) || nameField.getText().equals(""));
+                        if (confirmBtn.isDisable()) {
+                            notifyLabel.setText("Duplicate / Invalid server name");
+                        } else {
                             notifyLabel.setText("Ready");
                         }
                     }
                 });
+                versionList.setOnAction(e->{
+                    if(preferServerVersion.get()){
+                        nameField.setText(versionList.getSelectionModel().getSelectedItem());
+                        try {
+                            if (ServerManager.isDuplicate(nameField.getText()) || nameField.getText().equals("") || pathField.getText().equals("")) {
+                                confirmBtn.setDisable(true);
+                                notifyLabel.setText("Duplicate / Invalid server name");
+                            } else if ( pathField.getText().equals("")) {
+                                confirmBtn.setDisable(true);
+                                notifyLabel.setText("Invalid install path");
+                            } else {
+                                confirmBtn.setDisable(false);
+                                notifyLabel.setText("Ready");
+                            }
+                            pathField.setText((pathField.getText().substring(0, pathField.getText().lastIndexOf("\\")) + "\\" + nameField.getText()).replace(":\\\\", ":\\"));
+                        } catch (Exception ex) {
+                            System.out.println(ex.getMessage());
+                        }
+                    }
+                });
+                versionList.getItems().addAll("Vanilla 1.15.1", "Vanilla 1.15");
+                versionList.getSelectionModel().select(0);
+                {
+                    nameField.setText(versionList.getSelectionModel().getSelectedItem());
+                    confirmBtn.setDisable(ServerManager.isDuplicate(nameField.getText()));
+                    if (confirmBtn.isDisable()) {
+                        notifyLabel.setText("Duplicate / Invalid server name");
+                    } else {
+                        notifyLabel.setText("Ready");
+                    }
+                }
                 confirmBtn.setDisable(true);
                 confirmBtn.setOnAction(e -> {
                     new Thread(() -> {
                         try {
-                            if (!ServerManager.addNewServer(nameField.getText(), pathField.getText(), versionList.getSelectionModel().getSelectedItem(),jfxBar))
+                            if (!ServerManager.addNewServer(nameField.getText(), pathField.getText(), versionList.getSelectionModel().getSelectedItem(), jfxBar))
                                 throw new Exception();
                             Platform.runLater(() -> {
                                 serverList.getItems().clear();
@@ -333,13 +368,12 @@ public class GUI extends JFXTabPane {
 
 
                 nameBox.getChildren().addAll(setHGrow(nameLabel, nameField));
-
-
-                pathBox.getChildren().addAll(setHGrow(serverPathLabel, pathField, changeBtn));
+                pathBox.getChildren().addAll(setHGrow(pathLabel, pathField, changeBtn));
+                versionBox.getChildren().addAll(setHGrow(versionLabel,versionList));
 
                 versionList.setMaxWidth(Double.MAX_VALUE);
                 mainBox.setPadding(boxPadding);
-                mainBox.getChildren().addAll(nameBox, pathBox, versionList, confirmBtn, cancelButton,jfxBar, notifyLabel);
+                mainBox.getChildren().addAll(nameBox, pathBox, versionBox, confirmBtn, cancelButton, jfxBar, notifyLabel);
                 mainBox.setStyle(dialogStyle);
                 mainBox.setPrefWidth(GUI.this.getWidth() / 2);
                 dialogScene = new Scene(new Group(mainBox));
@@ -356,7 +390,11 @@ public class GUI extends JFXTabPane {
                 Scene dialogScene;
 
                 VBox mainBox = new VBox(8);
-                //reuse Path label
+                Label pathLabel = new Label("Path ");
+                pathLabel.setPadding(labelPadding);
+                Label jarLabel = new Label("Execute jar file");
+                jarLabel.setPadding(labelPadding);
+                pathLabel.setPadding(labelPadding);
                 Label nameLabel = new Label("Server name");
                 nameLabel.setPadding(labelPadding);
                 JFXTextField pathField = new JFXTextField();
@@ -365,7 +403,6 @@ public class GUI extends JFXTabPane {
                 AtomicReference<String> oldName = new AtomicReference<>();
                 JFXButton changeBtn = new JFXButton("Select folder");
                 JFXTextField nameField = new JFXTextField("Server");
-                //reuse Jar label
                 JFXComboBox<String> jarList = new JFXComboBox<>();
                 JFXButton confirmBtn = new JFXButton("Add");
                 JFXButton cancelButton = new JFXButton("Cancel");
@@ -440,10 +477,10 @@ public class GUI extends JFXTabPane {
                 nameBox.getChildren().addAll(setHGrow(nameLabel, nameField, sameAsFolder));
 
                 HBox pathBox = new HBox(8);
-                pathBox.getChildren().addAll(setHGrow(serverPathLabel, pathField, changeBtn));
+                pathBox.getChildren().addAll(setHGrow(pathLabel, pathField, changeBtn));
 
                 HBox jarBox = new HBox(8);
-                jarBox.getChildren().addAll(setHGrow(jarFileLabel, jarList));
+                jarBox.getChildren().addAll(setHGrow(jarLabel, jarList));
                 jarList.setMaxWidth(Double.MAX_VALUE);
 
                 mainBox.setPadding(boxPadding);
