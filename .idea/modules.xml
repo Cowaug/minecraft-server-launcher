@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Minecraft Server Launcher.iml" filepath="$PROJECT_DIR$/Minecraft Server Launcher.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MinecraftServerLauncher.iml" filepath="$PROJECT_DIR$/MinecraftServerLauncher.iml" />
     </modules>
   </component>
 </project>

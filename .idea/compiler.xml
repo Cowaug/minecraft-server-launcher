@@ -16,11 +16,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="Minecraft Server Launcher" />
+        <module name="MinecraftServerLauncher" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="Minecraft Server Launcher" target="8" />
+      <module name="MinecraftServerLauncher" target="8" />
     </bytecodeTargetLevel>
   </component>
 </project>

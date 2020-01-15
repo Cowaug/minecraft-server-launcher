@@ -54,9 +54,9 @@ public class Main extends Application {
 
             VBox mainBox = new VBox(8);
             Label exitLabel = new Label("Terminate any running server? (May cause data lost)");
-            JFXButton exitBtn = new JFXButton("Terminate and exit");
+            JFXButton exitBtn = new JFXButton("Terminate all and exit");
             JFXButton cancelButton = new JFXButton("Cancel");
-            cancelButton.setStyle(buttonStyle);
+            cancelButton.setStyle(buttonGreyStyle);
             cancelButton.setOnAction(e->{
                 dialog.close();
                 root.setEffect(new BoxBlur(0,0,0));
@@ -77,6 +77,7 @@ public class Main extends Application {
             dialog.setScene(dialogScene);
             dialog.show();
         });
+        primaryStage.setMaximized(true);
         primaryStage.show();
     }
 

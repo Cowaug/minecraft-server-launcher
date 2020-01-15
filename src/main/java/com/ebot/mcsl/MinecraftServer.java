@@ -1,5 +1,6 @@
 package com.ebot.mcsl;
 
+import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -95,10 +96,11 @@ public class MinecraftServer {
         this.launchedTab = launchedTab;
     }
 
-    public void startServer(final TextArea textArea) {
+    public void startServer(final TextArea textArea, final JFXButton... buttons) {
         new Thread(() -> {
             String command = "java -Xmx" + maxRam + "M -Xms" + (int) (maxRam * 0.25) + "M -XX:+UseG1GC -jar " + serverFileName + " nogui TRUE";
             try {
+                Platform.runLater(() -> textArea.setText("Starting server with " + maxRam + " MB of RAM...\n\n"));
                 proc = new ProcessBuilder(command.split(" ")).directory(new File(serverLocation)).start();
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
@@ -106,16 +108,30 @@ public class MinecraftServer {
                 while ((line = reader.readLine()) != null) {
                     String finalLine = line;
                     Platform.runLater(() -> textArea.appendText(finalLine + "\n"));
-                    System.out.print(line + "\n");
+                    System.out.println(line + "\n");
                 }
                 reader = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
                 while ((line = reader.readLine()) != null) {
                     String finalLine = line;
                     Platform.runLater(() -> textArea.appendText(finalLine + "\n"));
-                    System.out.print(line + "\n");
+                    System.out.println(line + "\n");
                 }
 
-                textArea.setText("Server Closed.");
+                Platform.runLater(() -> {
+                    textArea.setText("Server Closed.");
+                    Arrays.asList(buttons).forEach(btn -> {
+                        switch (btn.getText()) {
+                            case "Close":
+                            case "Start":
+                                btn.setDisable(false);
+                                break;
+                            case "Terminate":
+                            case "Stop":
+                                btn.setDisable(true);
+                                break;
+                        }
+                    });
+                });
                 proc.waitFor();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -123,26 +139,37 @@ public class MinecraftServer {
         }).start();
     }
 
-    public void saveAndStop(final TextArea textArea) {
-        if (!proc.isAlive()) return;
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(proc.getOutputStream()));
-        try {
-            writer.write("stop" + "\n");
-            writer.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void saveAndStop() {
+        writeCmd("stop");
+    }
 
+    public void writeCmd(String cmd) {
+        try {
+            if (!proc.isAlive()) return;
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(proc.getOutputStream()));
+            try {
+                writer.write(cmd + "\n");
+                writer.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
     }
 
     public void forceStop(final TextArea textArea) {
-        proc.destroyForcibly();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                textArea.setText("Server Terminated.");
-            }
-        }).start();
+        try {
+            proc.destroyForcibly();
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                textArea.setText("Server Terminated.");
+//            }
+//        }).start();
     }
 
     public void setMaxRam(int maxRam) {
@@ -238,7 +265,7 @@ public class MinecraftServer {
                 configs.add(new Config(k.toString(), v.toString(), checkValueFunction));
             });
         } catch (IOException ex) {
-            System.out.print(ex.getMessage());
+            System.out.println(ex.getMessage());
         }
 
     }
@@ -268,7 +295,7 @@ public class MinecraftServer {
                 }
             });
         } catch (IOException ex) {
-            System.out.print(ex.getMessage());
+            System.out.println(ex.getMessage());
         }
 
     }
@@ -280,7 +307,7 @@ public class MinecraftServer {
             prop.setProperty("max-ram", String.valueOf(maxRam));
             prop.store(output, null);
         } catch (IOException io) {
-            System.out.print(io.getMessage());
+            System.out.println(io.getMessage());
         }
     }
 
