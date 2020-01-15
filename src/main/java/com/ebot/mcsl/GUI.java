@@ -169,6 +169,7 @@ public class GUI extends JFXTabPane {
             JFXButton startServerBtn = new JFXButton("Start server");
             JFXButton renameServerBtn = new JFXButton("Rename server");
             JFXButton deleteButtonBtn = new JFXButton("Delete server");
+            JFXTextField searchField = new JFXTextField();
             JFXTreeTableView<MinecraftServer.Config> configTable = new JFXTreeTableView<>();
 
             HBox labelBox = new HBox(8);
@@ -187,9 +188,10 @@ public class GUI extends JFXTabPane {
             GUI.this.setVGrow(configTable, bottomBox);
             GUI.this.setHGrow(selectServerLabel, serverList, openServerLocationBtn, serverPathLabel, serverPath, selectServerBox,
                     jarFileLabel, jarFileSelect, ramLabel, serverRamList, startServerBtn, renameServerBtn, deleteButtonBtn,
-                    warningLabel, helpLabel);
+                    warningLabel, helpLabel, searchField);
             GUI.this.setEditable(false, serverPath);
             GUI.this.setDisable(true, bottomBox, openServerLocationBtn);
+            searchField.setPromptText("Type attribute to search");
             //endregion
 
             //region Top box
@@ -203,7 +205,7 @@ public class GUI extends JFXTabPane {
                 serverPath.setText(currentServer.getServerLocation());
                 openServerLocationBtn.setDisable(false);
                 bottomBox.setDisable(false);
-                configTable.setRoot(loadConfig(currentServer));
+                configTable.setRoot(loadConfig(currentServer,searchField.getText()));
                 jarFileSelect.getItems().clear();
                 jarFileSelect.getItems().addAll(currentServer.getJarFileList());
                 jarFileSelect.getSelectionModel().select(currentServer.getServerFileName());
@@ -262,7 +264,7 @@ public class GUI extends JFXTabPane {
                         if (ServerManager.isDuplicate(nameField.getText()) || nameField.getText().equals("") || pathField.getText().equals("")) {
                             confirmBtn.setDisable(true);
                             notifyLabel.setText("Duplicate / Invalid server name");
-                        } else if ( pathField.getText().equals("")) {
+                        } else if (pathField.getText().equals("")) {
                             confirmBtn.setDisable(true);
                             notifyLabel.setText("Invalid install path");
                         } else {
@@ -294,14 +296,14 @@ public class GUI extends JFXTabPane {
                         }
                     }
                 });
-                versionList.setOnAction(e->{
-                    if(preferServerVersion.get()){
+                versionList.setOnAction(e -> {
+                    if (preferServerVersion.get()) {
                         nameField.setText(versionList.getSelectionModel().getSelectedItem());
                         try {
                             if (ServerManager.isDuplicate(nameField.getText()) || nameField.getText().equals("") || pathField.getText().equals("")) {
                                 confirmBtn.setDisable(true);
                                 notifyLabel.setText("Duplicate / Invalid server name");
-                            } else if ( pathField.getText().equals("")) {
+                            } else if (pathField.getText().equals("")) {
                                 confirmBtn.setDisable(true);
                                 notifyLabel.setText("Invalid install path");
                             } else {
@@ -369,7 +371,7 @@ public class GUI extends JFXTabPane {
 
                 nameBox.getChildren().addAll(setHGrow(nameLabel, nameField));
                 pathBox.getChildren().addAll(setHGrow(pathLabel, pathField, changeBtn));
-                versionBox.getChildren().addAll(setHGrow(versionLabel,versionList));
+                versionBox.getChildren().addAll(setHGrow(versionLabel, versionList));
 
                 versionList.setMaxWidth(Double.MAX_VALUE);
                 mainBox.setPadding(boxPadding);
@@ -677,7 +679,11 @@ public class GUI extends JFXTabPane {
             configTable.sort();
             configTable.setMaxHeight(Double.MAX_VALUE);
             //endregion
-
+            searchField.setOnKeyPressed(event -> {
+                configTable.setRoot(loadConfig(currentServer,searchField.getText()));
+                configTable.setPredicate(attr -> attr.getValue().getAttribute().contains(searchField.getText()));
+            });
+            searchField.setOnMouseClicked(e -> searchField.selectAll());
             jarFileSelect.prefWidthProperty().bind(serverProperties.widthProperty().divide(2.25));
             jarFileSelect.setOnAction(event -> {
                 try {
@@ -697,7 +703,7 @@ public class GUI extends JFXTabPane {
             });
             labelBox.getChildren().addAll(warningLabel, helpLabel);
 
-            bottomBox.getChildren().addAll(serverProperties, configTable, labelBox);
+            bottomBox.getChildren().addAll(serverProperties, searchField, configTable, labelBox);
             //endregion
 
             this.getChildren().addAll(topBox, bottomBox);
@@ -705,10 +711,11 @@ public class GUI extends JFXTabPane {
             this.setSpacing(8);
         }
 
-        private TreeItem<MinecraftServer.Config> loadConfig(MinecraftServer currentServer) {
+        private TreeItem<MinecraftServer.Config> loadConfig(MinecraftServer currentServer, String contains) {
             TreeItem<MinecraftServer.Config> root = new TreeItem<>(new MinecraftServer.Config("abc", "1", c -> true));
             currentServer.getConfigs().forEach(e -> {
-                root.getChildren().add(new TreeItem<>(e));
+                if (e.getAttribute().contains(contains))
+                    root.getChildren().add(new TreeItem<>(e));
             });
             return root;
         }

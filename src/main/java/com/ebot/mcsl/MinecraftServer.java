@@ -9,9 +9,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TextArea;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Properties;
+import java.util.*;
 
 public class MinecraftServer {
     private Process proc;
@@ -264,6 +262,7 @@ public class MinecraftServer {
                 }
                 configs.add(new Config(k.toString(), v.toString(), checkValueFunction));
             });
+            configs.sort(Comparator.comparing(Config::getAttribute));
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
