@@ -4,9 +4,7 @@ package com.ebot.mcsl;
 import com.jfoenix.controls.JFXProgressBar;
 import javafx.application.Platform;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -15,9 +13,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ServerManager {
     private static ArrayList<MinecraftServer> minecraftServers = new ArrayList<>();
+    private static ArrayList<Version> versions = new ArrayList<>();
 
     public static void scanServer(String path) {
 //        minecraftServers.clear();
@@ -25,6 +25,32 @@ public class ServerManager {
 //        Arrays.asList(file).forEach(e ->
 //                minecraftServers.add(new MinecraftServer(e.getName(), e.getAbsolutePath()))
 //        );
+        InputStream in = null;
+        try {
+            in = new URL("https://raw.githubusercontent.com/exos288/minecraft-server-launcher/master/src/main/resources/version.txt").openStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            Files.copy(in, Paths.get(path + "\\" + "version.txt"), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            in = new FileInputStream(path+"\\version.txt");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        BufferedReader reader=new BufferedReader(new InputStreamReader(in));
+        String line;
+        while(true) {
+            try {
+                if ((line = reader.readLine()) == null) break;
+                versions.add(new Version(line.split("\"")[1],line.split("\"")[0]));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         minecraftServers.addAll(UserConfig.readServerLocation());
     }
 
@@ -45,7 +71,13 @@ public class ServerManager {
         File file = new File(path);
         if (file.mkdir()) {
             System.setProperty("http.agent", "Chrome");
-            InputStream in = new URL(Version.valueOf(version.replace("Vanilla ", "v").replace(".","")).getUrl()).openStream();
+            AtomicReference<String> url = new AtomicReference<>();
+            versions.forEach(v->{
+                if(v.name.equals(version.replace("Vanilla ", ""))) {
+                    url.set(v.url);
+                }
+            });
+            InputStream in = new URL(url.get()).openStream();
             Platform.runLater(()->jfxProgressBar.setProgress(0.0));
             Files.copy(ServerManager.class.getResourceAsStream("/eula.txt"), Paths.get(path + "\\" + "eula.txt"), StandardCopyOption.REPLACE_EXISTING);
             Platform.runLater(()->jfxProgressBar.setProgress(0.3));
@@ -108,12 +140,7 @@ public class ServerManager {
         });
     }
 
-    enum Version {
-        v1151("1.15.1", "https://launcher.mojang.com/v1/objects/4d1826eebac84847c71a77f9349cc22afd0cf0a1/server.jar"),
-        v115("1.15", "https://launcher.mojang.com/v1/objects/e9f105b3c5c7e85c7b445249a93362a22f62442d/server.jar"),
-        v1_13_1("1.13", "y"),
-        v1_12_1("1.12", "y"),
-        v1_11_1("1.11", "y");
+    static class Version {
         String name;
         String url;
 

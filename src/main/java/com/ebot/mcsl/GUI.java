@@ -108,8 +108,10 @@ public class GUI extends JFXTabPane {
             //endregion
             commandLine.setOnKeyPressed(ke -> {
                 if (ke.getCode().equals(KeyCode.ENTER)) {
-                    minecraftServer.writeCmd(commandLine.getText());
+                    minecraftServer.writeCmd(commandLine.getText()+"\n");
                     commandLine.setText("");
+                }else if (ke.getCode().equals(KeyCode.TAB)) {
+                    //todo auto fill
                 }
             });
 

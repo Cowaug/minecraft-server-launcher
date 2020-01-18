@@ -138,7 +138,7 @@ public class MinecraftServer {
     }
 
     public void saveAndStop() {
-        writeCmd("stop");
+        writeCmd("stop\n");
     }
 
     public void writeCmd(String cmd) {
@@ -146,7 +146,7 @@ public class MinecraftServer {
             if (!proc.isAlive()) return;
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(proc.getOutputStream()));
             try {
-                writer.write(cmd + "\n");
+                writer.write(cmd);
                 writer.flush();
             } catch (IOException e) {
                 e.printStackTrace();
