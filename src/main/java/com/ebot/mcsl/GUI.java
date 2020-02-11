@@ -245,7 +245,6 @@ public class GUI extends JFXTabPane {
                 Label versionLabel = new Label("Sever version");
                 versionLabel.setPadding(labelPadding);
                 JFXTextField pathField = new JFXTextField();
-                AtomicReference<String> oldName = new AtomicReference<>();
                 JFXButton changeBtn = new JFXButton("Select folder");
                 JFXTextField nameField = new JFXTextField("Server");
                 JFXComboBox<String> versionList = new JFXComboBox<>();
@@ -282,7 +281,7 @@ public class GUI extends JFXTabPane {
                     File selectedDirectory;
                     try {
                         DirectoryChooser directoryChooser = new DirectoryChooser();
-                        directoryChooser.setInitialDirectory(new File(pathField.getText()));
+                        directoryChooser.setInitialDirectory(new File(pathField.getText().substring(0,pathField.getText().lastIndexOf("\\"))));
                         selectedDirectory = directoryChooser.showDialog(stage);
                     } catch (Exception ex) {
                         selectedDirectory = new DirectoryChooser().showDialog(stage);
@@ -318,7 +317,10 @@ public class GUI extends JFXTabPane {
                         }
                     }
                 });
-                versionList.getItems().addAll("Vanilla 1.15.1", "Vanilla 1.15");
+                ServerManager.getVersions().forEach(v->{
+                    versionList.getItems().add("Vanilla " + v.name);
+                });
+
                 versionList.getSelectionModel().select(0);
                 {
                     nameField.setText(versionList.getSelectionModel().getSelectedItem());
@@ -341,6 +343,7 @@ public class GUI extends JFXTabPane {
                                 serverList.getSelectionModel().select(nameField.getText());
                                 dialog.close();
                                 UserConfig.writeServerLocation(ServerManager.getMinecraftServers());
+                                UserConfig.setUserPath(pathField.getText().substring(0,pathField.getText().lastIndexOf("\\")));
                                 GUI.this.setEffect(new BoxBlur(0, 0, 0));
                             });
                         } catch (Exception ex) {
@@ -363,6 +366,13 @@ public class GUI extends JFXTabPane {
                     notifyLabel.setText("Downloading... (may take long time on slow network)");
 
                 });
+                pathField.setText((UserConfig.getUserPath() + "\\" + nameField.getText()).replace(":\\\\", ":\\"));
+                confirmBtn.setDisable(ServerManager.isDuplicate(nameField.getText()) || nameField.getText().equals(""));
+                if (confirmBtn.isDisable()) {
+                    notifyLabel.setText("Duplicate / Invalid server name");
+                } else {
+                    notifyLabel.setText("Ready");
+                }
                 confirmBtn.setMaxWidth(Double.MAX_VALUE);
                 cancelButton.setMaxWidth(Double.MAX_VALUE);
                 jfxBar.setMaxWidth(Double.MAX_VALUE);

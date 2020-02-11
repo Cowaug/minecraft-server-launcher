@@ -16,6 +16,11 @@ public class UserConfig {
         return userPath;
     }
 
+    public static void setUserPath(String userPath) {
+        UserConfig.userPath = userPath;
+        writeUserConfig(userPath);
+    }
+
     public static void writeUserConfig(String userPath){
         UserConfig.userPath = userPath;
         JSONObject userConfig = new JSONObject();

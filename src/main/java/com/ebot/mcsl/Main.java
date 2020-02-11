@@ -86,7 +86,7 @@ public class Main extends Application {
             File file = new File(defaultPath);
             file.mkdir();
             UserConfig.readUserConfig();
-            ServerManager.scanServer(UserConfig.getUserPath());
+            ServerManager.scanServer();
         } catch (Exception e) {
             e.printStackTrace();
         }

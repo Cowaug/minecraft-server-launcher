@@ -19,7 +19,7 @@ public class ServerManager {
     private static ArrayList<MinecraftServer> minecraftServers = new ArrayList<>();
     private static ArrayList<Version> versions = new ArrayList<>();
 
-    public static void scanServer(String path) {
+    public static void scanServer() {
 //        minecraftServers.clear();
 //        File[] file = new File(path).listFiles(File::isDirectory);
 //        Arrays.asList(file).forEach(e ->
@@ -32,12 +32,12 @@ public class ServerManager {
             e.printStackTrace();
         }
         try {
-            Files.copy(in, Paths.get(path + "\\" + "version.txt"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(in, Paths.get(Main.defaultPath + "\\" + "version.txt"), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             e.printStackTrace();
         }
         try {
-            in = new FileInputStream(path+"\\version.txt");
+            in = new FileInputStream(Main.defaultPath+"\\version.txt");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -65,6 +65,10 @@ public class ServerManager {
         } else {
             minecraftServers.add(new MinecraftServer(name, path, serverFileName));
         }
+    }
+
+    public static ArrayList<Version> getVersions() {
+        return versions;
     }
 
     public static boolean addNewServer(String name, String path, String version, JFXProgressBar jfxProgressBar) throws IOException {
