@@ -10,19 +10,31 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class UserConfig {
-    private static String userPath;
+    private static String previousInstallationPath;
 
-    public static String getUserPath() {
-        return userPath;
+    /**
+     * Get previous installation path
+     * @return Previous installation path
+     */
+    public static String getPreviousInstallationPath() {
+        return previousInstallationPath;
     }
 
-    public static void setUserPath(String userPath) {
-        UserConfig.userPath = userPath;
-        writeUserConfig(userPath);
+    /**
+     * Set previous installation path
+     * @param previousInstallationPath Previous installation path
+     */
+    public static void setPreviousInstallationPath(String previousInstallationPath) {
+        UserConfig.previousInstallationPath = previousInstallationPath;
+        writeUserConfig(previousInstallationPath);
     }
 
+    /**
+     * Save user config
+     * @param userPath Previous path of installation
+     */
     public static void writeUserConfig(String userPath){
-        UserConfig.userPath = userPath;
+        UserConfig.previousInstallationPath = userPath;
         JSONObject userConfig = new JSONObject();
         userConfig.put("path",userPath);
 
@@ -34,17 +46,24 @@ public class UserConfig {
         }
     }
 
+    /**
+     * Load user config
+     */
     public static void readUserConfig(){
         JSONParser jsonParser = new JSONParser();
         try (FileReader reader = new FileReader(Main.defaultPath + "\\" + "config.json")) {
             JSONObject userConfig = (JSONObject) jsonParser.parse(reader);
-            userPath = (String) userConfig.get("path");
+            previousInstallationPath = (String) userConfig.get("path");
         } catch (Exception e) {
             e.printStackTrace();
-            userPath = Main.defaultPath;
+            previousInstallationPath = Main.defaultPath;
         }
     }
 
+    /**
+     * Save information about all server (name and it's location on disk)
+     * @param serverLocations List of Minecraft Servers
+     */
     public static void writeServerLocation(ArrayList<MinecraftServer> serverLocations) {
         JSONArray serverList = new JSONArray();
         serverLocations.forEach(serverLocation -> {
@@ -64,6 +83,10 @@ public class UserConfig {
         }
     }
 
+    /**
+     * Load information about all server (name and it's location on disk)
+     * @return  serverLocations List of Minecraft Servers
+     */
     public static ArrayList<MinecraftServer> readServerLocation() {
         JSONParser jsonParser = new JSONParser();
         ArrayList<MinecraftServer> arrayList = new ArrayList<>();

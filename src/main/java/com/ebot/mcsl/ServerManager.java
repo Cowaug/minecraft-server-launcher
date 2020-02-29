@@ -19,6 +19,9 @@ public class ServerManager {
     private static ArrayList<MinecraftServer> minecraftServers = new ArrayList<>();
     private static ArrayList<Version> versions = new ArrayList<>();
 
+    /**
+     * Get server from MCSL saved file
+     */
     public static void scanServer() {
 //        minecraftServers.clear();
 //        File[] file = new File(path).listFiles(File::isDirectory);
@@ -54,6 +57,12 @@ public class ServerManager {
         minecraftServers.addAll(UserConfig.readServerLocation());
     }
 
+    /**
+     * Add exist server to database
+     * @param name Server's name
+     * @param path Path to server folder
+     * @param serverFileName Server's execute .jar file
+     */
     public static void addExistServer(String name, String path, String serverFileName) {
         if (minecraftServers.stream().anyMatch(minecraftServer -> minecraftServer.getServerLocation().equals(path))) {
             minecraftServers.forEach(minecraftServer -> {
@@ -67,10 +76,23 @@ public class ServerManager {
         }
     }
 
+    /**
+     * Get list of all minecraft server
+     * @return Array List of version
+     */
     public static ArrayList<Version> getVersions() {
         return versions;
     }
 
+    /**
+     * Add new server
+     * @param name Server's Name
+     * @param path Path to server folder
+     * @param version Version of server
+     * @param jfxProgressBar Progress bar to display installation process
+     * @return Success or not
+     * @throws IOException Ex
+     */
     public static boolean addNewServer(String name, String path, String version, JFXProgressBar jfxProgressBar) throws IOException {
         File file = new File(path);
         if (file.mkdir()) {
@@ -96,18 +118,35 @@ public class ServerManager {
         }
     }
 
+    /**
+     * Get list of all server in database
+     * @return
+     */
     public static ArrayList<MinecraftServer> getMinecraftServers() {
         return minecraftServers;
     }
 
+    /**
+     * Delete server from database
+     * @param minecraftServer
+     */
     public static void removeMinecraftServer(MinecraftServer minecraftServer) {
         minecraftServers.remove(minecraftServer);
     }
 
+    /**
+     * Get Minecraft Server object from name
+     * @param serverName Name of server
+     * @return Minecraft Server object
+     */
     public static MinecraftServer getMinecraftServer(String serverName) {
         return ((MinecraftServer) minecraftServers.stream().filter(e -> e.getServerName().equals(serverName)).toArray()[0]);
     }
 
+    /**
+     * Get list of all servers in database
+     * @return String array of all servers
+     */
     public static String[] getServerList() {
         ArrayList<String> arrayList = new ArrayList<>();
         minecraftServers.forEach(e -> arrayList.add(e.getServerName()));
@@ -117,6 +156,11 @@ public class ServerManager {
         return arrayList.toArray(new String[0]);
     }
 
+    /**
+     * Check if the server's name is valid
+     * @param name Server's name
+     * @return Valid or not
+     */
     public static boolean isDuplicate(String name) {
         AtomicBoolean unValid = new AtomicBoolean(false);
         Arrays.asList("/", "\\", "*", ":", "?", "\"", "<", ">", "|").forEach(e -> {
@@ -125,6 +169,12 @@ public class ServerManager {
         return minecraftServers.stream().anyMatch(e -> e.getServerName().equals(name)) || unValid.get();
     }
 
+    /**
+     * Check if the server's name and path is valid
+     * @param name Server's name
+     * @param path Path to install
+     * @return Valid or not
+     */
     public static boolean isDuplicate(String name, String path) {
         AtomicBoolean unValid = new AtomicBoolean(false);
         Arrays.asList("/", "\\", "*", ":", "?", "\"", "<", ">", "|").forEach(e -> {
@@ -135,6 +185,9 @@ public class ServerManager {
                 minecraftServers.stream().anyMatch(e -> e.getServerLocation().equals(path));
     }
 
+    /**
+     * Force stop all running servers
+     */
     public static void terminateAllServer() {
         minecraftServers.forEach(minecraftServer -> {
             try {
@@ -144,17 +197,21 @@ public class ServerManager {
         });
     }
 
+    /**
+     * Version object
+     */
     static class Version {
         String name;
         String url;
 
+        /**
+         * Create Version object
+         * @param name Version's name
+         * @param url Version's download URL
+         */
         Version(String name, String url) {
             this.name = name;
             this.url = url;
-        }
-
-        public String getUrl() {
-            return url;
         }
     }
 }

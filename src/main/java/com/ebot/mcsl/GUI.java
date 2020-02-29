@@ -59,6 +59,11 @@ public class GUI extends JFXTabPane {
     public static final Insets boxPadding = new Insets(8);
     public static final Insets labelPadding = new Insets(4, 0, 0, 0);
 
+    /**
+     * Start UI by adding Main Tab to view
+     * @param stage Stage
+     * @param application Application
+     */
     public GUI(Stage stage, Application application) {
         this.stage = stage;
         this.application = application;
@@ -69,6 +74,9 @@ public class GUI extends JFXTabPane {
         this.getTabs().add(mainTab);
     }
 
+    /**
+     *
+     */
     public void reload() {
         Tab mainTab = new Tab("Home");
 
@@ -77,7 +85,15 @@ public class GUI extends JFXTabPane {
         this.getTabs().add(mainTab);
     }
 
+    /**
+     * Server control tab (start, stop, terminate)
+     */
     class ServerTab extends VBox {
+        /**
+         * Create Server Tab
+         * @param minecraftServer Minecraft server to create control tab
+         * @param tab Main tab (to return when exit)
+         */
         ServerTab(MinecraftServer minecraftServer, Tab tab) {
             JFXTextArea console = new JFXTextArea();
 
@@ -144,9 +160,15 @@ public class GUI extends JFXTabPane {
         }
     }
 
+    /**
+     * Main Tab (add, delete, modify server)
+     */
     class MainTab extends VBox {
         private MinecraftServer currentServer;
 
+        /**
+         * Create Main Tab
+         */
         MainTab() {
             //region Variables
             HBox topBox = new HBox(8);
@@ -343,7 +365,7 @@ public class GUI extends JFXTabPane {
                                 serverList.getSelectionModel().select(nameField.getText());
                                 dialog.close();
                                 UserConfig.writeServerLocation(ServerManager.getMinecraftServers());
-                                UserConfig.setUserPath(pathField.getText().substring(0,pathField.getText().lastIndexOf("\\")));
+                                UserConfig.setPreviousInstallationPath(pathField.getText().substring(0,pathField.getText().lastIndexOf("\\")));
                                 GUI.this.setEffect(new BoxBlur(0, 0, 0));
                             });
                         } catch (Exception ex) {
@@ -366,7 +388,7 @@ public class GUI extends JFXTabPane {
                     notifyLabel.setText("Downloading... (may take long time on slow network)");
 
                 });
-                pathField.setText((UserConfig.getUserPath() + "\\" + nameField.getText()).replace(":\\\\", ":\\"));
+                pathField.setText((UserConfig.getPreviousInstallationPath() + "\\" + nameField.getText()).replace(":\\\\", ":\\"));
                 confirmBtn.setDisable(ServerManager.isDuplicate(nameField.getText()) || nameField.getText().equals(""));
                 if (confirmBtn.isDisable()) {
                     notifyLabel.setText("Duplicate / Invalid server name");
@@ -723,6 +745,12 @@ public class GUI extends JFXTabPane {
             this.setSpacing(8);
         }
 
+        /**
+         * Load server.properties
+         * @param currentServer Current MinecraftServer object
+         * @param contains Keyword to included
+         * @return TreeItem Object
+         */
         private TreeItem<MinecraftServer.Config> loadConfig(MinecraftServer currentServer, String contains) {
             TreeItem<MinecraftServer.Config> root = new TreeItem<>(new MinecraftServer.Config("abc", "1", c -> true));
             currentServer.getConfigs().forEach(e -> {
@@ -732,6 +760,11 @@ public class GUI extends JFXTabPane {
             return root;
         }
     }
+
+
+    /**
+     * Below is custom methods
+     */
 
     private Node[] setHGrow(Node... nodes) {
         Arrays.asList(nodes).forEach(e -> HBox.setHgrow(e, Priority.ALWAYS));

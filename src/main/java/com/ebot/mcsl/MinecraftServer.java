@@ -21,6 +21,11 @@ public class MinecraftServer {
     private Tab launchedTab = null;
     private ArrayList<String> jarFileList = new ArrayList<>();
 
+    /**
+     * Create a Minecraft server object
+     * @param serverName Name of server
+     * @param serverLocation Path to server
+     */
     MinecraftServer(String serverName, String serverLocation) {
         this.serverName = serverName;
         this.serverLocation = serverLocation;
@@ -29,6 +34,12 @@ public class MinecraftServer {
         loadJarList();
     }
 
+    /**
+     * Create a Minecraft server object
+     * @param serverName Name of server
+     * @param serverLocation Path to server
+     * @param serverFileName Name of execute .jar file
+     */
     MinecraftServer(String serverName, String serverLocation, String serverFileName) {
         this.serverName = serverName;
         this.serverLocation = serverLocation;
@@ -38,14 +49,26 @@ public class MinecraftServer {
         loadJarList();
     }
 
+    /**
+     * Get max RAM server allow
+     * @return Max RAM of server
+     */
     public int getMaxRam() {
         return maxRam;
     }
 
+    /**
+     * Change server name
+     * @param serverName New server name
+     */
     public void setServerName(String serverName) {
         this.serverName = serverName;
     }
 
+    /**
+     * Rename the folder that contain the server
+     * @param newName New name of folder
+     */
     public void renameServerLocation(String newName) {
         File file = new File(serverLocation);
         String newServerLocation = serverLocation.substring(0, serverLocation.lastIndexOf("\\")) + "\\" + newName;
@@ -55,45 +78,85 @@ public class MinecraftServer {
         }
     }
 
+    /**
+     * Change name of execute .jar file
+     * @param serverFileName New .jar file to execute
+     */
     public void setServerFileName(String serverFileName) {
         this.serverFileName = serverFileName;
         saveLaunchConfig();
     }
 
+    /**
+     * Return name of execute .jar file
+     * @return Name of execute .jar file
+     */
     public String getServerFileName() {
         return serverFileName;
     }
 
+    /**
+     * Load all of .jar file
+     */
     void loadJarList() {
         File[] file = new File(serverLocation).listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
         if (file == null) return;
         Arrays.asList(file).forEach(e -> jarFileList.add(e.getName()));
     }
 
+    /**
+     * Get list of all .jar files in server folder
+     * @return Array list of all .jar files
+     */
     public ArrayList<String> getJarFileList() {
         return jarFileList;
     }
 
+    /**
+     * Get server path on disk
+     * @return Server path
+     */
     String getServerLocation() {
         return serverLocation;
     }
 
+    /**
+     * Get server name
+     * @return Server name
+     */
     String getServerName() {
         return serverName;
     }
 
+    /**
+     * Return control tab of this server
+     * @return Control tab
+     */
     public Tab getLaunchedTab() {
         return launchedTab;
     }
 
+    /**
+     * Tell if control tab of this server is opened or not
+     * @return Control tab open status
+     */
     public boolean isLaunched() {
         return launchedTab != null;
     }
 
+    /**
+     * Set Control tab of this server
+     * @param launchedTab Control tab
+     */
     public void setLaunchedTab(Tab launchedTab) {
         this.launchedTab = launchedTab;
     }
 
+    /**
+     * Start the server
+     * @param textArea TextArea to display console log of the server
+     * @param buttons Control buttons (start, stop, terminate...)
+     */
     public void startServer(final TextArea textArea, final JFXButton... buttons) {
         new Thread(() -> {
             String command = "java -Xmx" + maxRam + "M -Xms" + (int) (maxRam * 0.25) + "M -XX:+UseG1GC -jar " + serverFileName + " nogui TRUE";
@@ -137,10 +200,17 @@ public class MinecraftServer {
         }).start();
     }
 
+    /**
+     * Save all data then stop server
+     */
     public void saveAndStop() {
         writeCmd("stop\n");
     }
 
+    /**
+     * Write command into the console of the server
+     * @param cmd Command
+     */
     public void writeCmd(String cmd) {
         try {
             if (!proc.isAlive()) return;
@@ -156,6 +226,10 @@ public class MinecraftServer {
         }
     }
 
+    /**
+     * Force server to stop
+     * @param textArea TextArea to display status of server
+     */
     public void forceStop(final TextArea textArea) {
         try {
             proc.destroyForcibly();
@@ -170,11 +244,18 @@ public class MinecraftServer {
 //        }).start();
     }
 
+    /**
+     * Set server max allowed RAM
+     * @param maxRam Maximum amount of RAM (MB)
+     */
     public void setMaxRam(int maxRam) {
         this.maxRam = maxRam;
         saveLaunchConfig();
     }
 
+    /**
+     * Load server configs from server.properties
+     */
     public void loadServerConfig() {
         try (InputStream input = new FileInputStream(serverLocation + "\\" + "server.properties")) {
             CheckValue boolCheck = c -> Arrays.asList("true", "false").contains(c);
@@ -269,7 +350,9 @@ public class MinecraftServer {
 
     }
 
-
+    /**
+     * Save server config to server.properties
+     */
     public void saveServerConfig() {
         try (OutputStream output = new FileOutputStream(serverLocation + "\\" + "server.properties")) {
             Properties prop = new Properties();
@@ -280,6 +363,9 @@ public class MinecraftServer {
         }
     }
 
+    /**
+     * Load custom config of server (.jar file to execute, max amount of RAM)
+     */
     public void loadLaunchConfig() {
         try (InputStream input = new FileInputStream(serverLocation + "\\" + "mcsl.properties")) {
             Properties prop = new Properties();
@@ -299,6 +385,9 @@ public class MinecraftServer {
 
     }
 
+    /**
+     * Save custom config of server (.jar file to execute, max amount of RAM)
+     */
     public void saveLaunchConfig() {
         try (OutputStream output = new FileOutputStream(serverLocation + "\\" + "mcsl.properties")) {
             Properties prop = new Properties();
@@ -310,37 +399,71 @@ public class MinecraftServer {
         }
     }
 
+    /**
+     * Get list of server config from server.properties file
+     * @return ArrayList of server configs
+     */
     public ArrayList<Config> getConfigs() {
         return configs;
     }
 
+    /**
+     * Config object to save server's config
+     */
     public static class Config extends RecursiveTreeObject<Config> {
         private StringProperty attribute;
         private StringProperty value;
         private CheckValue checkValueFunction;
 
+        /**
+         * Create new Config
+         * @param attribute Name of attribute
+         * @param value Value of attribute
+         * @param checkValueFunction Lambda function for checking input
+         */
         public Config(String attribute, String value, CheckValue checkValueFunction) {
             this.attribute = new SimpleStringProperty(attribute);
             this.value = new SimpleStringProperty(value);
             this.checkValueFunction = checkValueFunction;
         }
 
+        /**
+         * Get name of attribute
+         * @return Name of attribute
+         */
         public String getAttribute() {
             return attribute.get();
         }
 
+        /**
+         * Get name of attribute in property form
+         * @return Name of attribute in property form
+         */
         public StringProperty getAttributeProp() {
             return attribute;
         }
 
+        /**
+         * Get value of attribute
+         * @return value of attribute
+         */
         public String getValue() {
             return value.get();
         }
 
+        /**
+         * Get value of attribute in property form
+         * @return value of attribute in property form
+         */
         public StringProperty getValueProp() {
             return value;
         }
 
+        /**
+         * Set value of attribute
+         * @param value Value to set
+         * @throws Exception Ex
+         */
         public void setValue(String value) throws Exception {
             if (checkValueFunction.check(value))
                 this.value.set(value);
@@ -348,6 +471,9 @@ public class MinecraftServer {
         }
     }
 
+    /**
+     * Interface of lambda function use to check value
+     */
     interface CheckValue {
         boolean check(String s);
     }
