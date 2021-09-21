@@ -20,8 +20,9 @@ import java.io.File;
 import static com.ebot.mcsl.GUI.*;
 
 public class Main extends Application {
-    public static final String path = System.getenv("APPDATA") + "\\.minecraft";
-    public static final String defaultPath = path + "\\minecraft server launcher";
+//    public static final String path = System.getenv("APPDATA") + "\\.minecraft";
+//    public static final String defaultPath = path + "\\minecraft server launcher";
+    public static final String defaultPath = System.getProperty("user.dir") + "\\.mcsl";
     private double xOffset = 0;
     private double yOffset = 0;
 
@@ -33,7 +34,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         Parent root = new GUI(primaryStage, this);
 
-        Scene scene=new Scene(root, 1280, 720);
+        Scene scene = new Scene(root, 1280, 720);
         scene.setFill(Color.TRANSPARENT);
         primaryStage.setTitle("Minecraft Server Launcher");
         primaryStage.setScene(scene);
@@ -47,7 +48,7 @@ public class Main extends Application {
             dialog.initModality(Modality.APPLICATION_MODAL);
             dialog.initStyle(StageStyle.UNDECORATED);
             dialog.initOwner(primaryStage);
-            root.setEffect(new BoxBlur(4,4,4));
+            root.setEffect(new BoxBlur(4, 4, 4));
 
             Scene dialogScene;
 
@@ -56,9 +57,9 @@ public class Main extends Application {
             JFXButton exitBtn = new JFXButton("Terminate all and exit");
             JFXButton cancelButton = new JFXButton("Cancel");
             cancelButton.setStyle(buttonGreyStyle);
-            cancelButton.setOnAction(e->{
+            cancelButton.setOnAction(e -> {
                 dialog.close();
-                root.setEffect(new BoxBlur(0,0,0));
+                root.setEffect(new BoxBlur(0, 0, 0));
 
             });
             exitBtn.setOnAction(e -> {
@@ -71,7 +72,7 @@ public class Main extends Application {
             exitBtn.setStyle(buttonRedStyle);
             mainBox.setPadding(boxPadding);
             mainBox.setStyle(dialogStyle);
-            mainBox.getChildren().addAll(exitLabel, exitBtn,cancelButton);
+            mainBox.getChildren().addAll(exitLabel, exitBtn, cancelButton);
             dialogScene = new Scene(new Group(mainBox));
             dialog.setScene(dialogScene);
             dialog.show();

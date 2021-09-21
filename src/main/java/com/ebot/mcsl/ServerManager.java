@@ -30,7 +30,7 @@ public class ServerManager {
 //        );
         InputStream in = null;
         try {
-            in = new URL("https://raw.githubusercontent.com/exos288/minecraft-server-launcher/master/src/main/resources/version.txt").openStream();
+            in = new URL("https://raw.githubusercontent.com/Cowaug/minecraft-server-launcher/master/src/main/resources/version.txt").openStream();
         } catch (IOException e) {
             e.printStackTrace();
         }
