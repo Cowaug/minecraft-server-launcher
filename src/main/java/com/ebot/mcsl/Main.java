@@ -77,7 +77,7 @@ public class Main extends Application {
             dialog.setScene(dialogScene);
             dialog.show();
         });
-        primaryStage.setMaximized(true);
+//        primaryStage.setMaximized(true);
         primaryStage.show();
     }
 

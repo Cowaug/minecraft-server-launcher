@@ -296,7 +296,7 @@ public class GUI extends JFXTabPane {
                         }
                         pathField.setText((pathField.getText().substring(0, pathField.getText().lastIndexOf("\\")) + "\\" + nameField.getText()).replace(":\\\\", ":\\"));
                     } catch (Exception ex) {
-                        System.out.println(ex.getMessage());
+                        //System.out.println(ex.getMessage());
                     }
                 });
                 changeBtn.setOnAction(e -> {
@@ -335,7 +335,7 @@ public class GUI extends JFXTabPane {
                             }
                             pathField.setText((pathField.getText().substring(0, pathField.getText().lastIndexOf("\\")) + "\\" + nameField.getText()).replace(":\\\\", ":\\"));
                         } catch (Exception ex) {
-                            System.out.println(ex.getMessage());
+                            //System.out.println(ex.getMessage());
                         }
                     }
                 });
@@ -369,7 +369,7 @@ public class GUI extends JFXTabPane {
                                 GUI.this.setEffect(new BoxBlur(0, 0, 0));
                             });
                         } catch (Exception ex) {
-                            System.out.println(ex.getMessage());
+                            //System.out.println(ex.getMessage());
                             Platform.runLater(() -> {
                                 notifyLabel.setText("Select other folder and try again");
                                 cancelButton.setDisable(false);
@@ -724,7 +724,7 @@ public class GUI extends JFXTabPane {
                     if (!jarFileSelect.getSelectionModel().getSelectedItem().equals(""))
                         currentServer.setServerFileName(jarFileSelect.getSelectionModel().getSelectedItem());
                 } catch (Exception e) {
-                    System.out.println(e.getMessage());
+                    //System.out.println(e.getMessage());
                 }
 
             });

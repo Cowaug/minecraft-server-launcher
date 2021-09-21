@@ -35,6 +35,7 @@ public class ServerManager {
             e.printStackTrace();
         }
         try {
+//            //System.out.println(Paths.get(Main.defaultPath + "\\" + "version.txt"));
             Files.copy(in, Paths.get(Main.defaultPath + "\\" + "version.txt"), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             e.printStackTrace();
